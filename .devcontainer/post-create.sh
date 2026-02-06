@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "📦 Installing frontend dependencies..."
+cd /workspace/frontend
+npm install
+
+echo "🐍 Installing Python MCP server dependencies..."
+cd /workspace/mcp-servers
+pip install --user -r requirements.txt
+
+echo ""
+echo "============================================"
+echo "  🗺️  Living Literary Map — Setup Complete"
+echo "============================================"
+echo ""
+echo "  Frontend:  cd frontend && npm run dev"
+echo "  MCP:       cd mcp-servers && uvicorn archivist.server:app --port 8000"
+echo ""
+echo "  Don't forget to set your env vars:"
+echo "    MAPBOX_ACCESS_TOKEN"
+echo "    DEDALUS_API_KEY"
+echo "============================================"

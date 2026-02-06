@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    ports:
+      - "3000:3000"
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+    environment:
+      - MAPBOX_ACCESS_TOKEN=${MAPBOX_ACCESS_TOKEN:-}
+      - DEDALUS_API_KEY=${DEDALUS_API_KEY:-}

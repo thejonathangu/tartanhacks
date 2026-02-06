@@ -1,0 +1,60 @@
+{
+  "name": "Living Literary Map",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+
+  // Node 20 + Python 3.11 base
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  // VS Code extensions every team member gets automatically
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "bradlc.vscode-tailwindcss",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "github.copilot",
+        "github.copilot-chat",
+        "streetsidesoftware.code-spell-checker"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.python"
+        },
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  // Ports to forward
+  "forwardPorts": [
+    3000,  // React dev server
+    8000,  // MCP / FastAPI server
+    8001,  // LinguistAgent
+    8002   // StylistAgent
+  ],
+
+  // Run after container is created
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  // Run every time the container starts
+  "postStartCommand": "echo '🗺️  Living Literary Map devcontainer ready!'",
+
+  "remoteUser": "vscode"
+}
