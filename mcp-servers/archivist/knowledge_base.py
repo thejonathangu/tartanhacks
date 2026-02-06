@@ -1,27 +1,9 @@
 """
-ArchivistAgent — MCP Tool Server
+ArchivistAgent — In-memory knowledge base.
 
-Retrieves book-specific quotes and deeper historical context from an
-in-memory GeoJSON knowledge base.  In production this would query a
-vector DB or call out to an LLM; for the hackathon we keep it simple.
-
-Run:  uvicorn archivist.server:app --port 8000 --reload
+Mirrors the frontend GeoJSON.  Each entry contains the quote,
+historical context, and dialect note for a literary landmark.
 """
-
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-
-app = FastAPI(title="ArchivistAgent MCP Server", version="0.1.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ── In-memory knowledge base (mirrors the frontend GeoJSON) ────────────
 
 KNOWLEDGE_BASE: dict[str, dict] = {
     "jlc-san-francisco": {
@@ -42,6 +24,7 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         ),
         "year": 1949,
         "book": "The Joy Luck Club",
+        "era": "1940s",
     },
     "hr-harlem": {
         "quote": "I, too, sing America. I am the darker brother.",
@@ -59,6 +42,7 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         ),
         "year": 1925,
         "book": "Harlem Renaissance Anthology",
+        "era": "1920s",
     },
     "cr-montgomery": {
         "quote": (
@@ -79,54 +63,6 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         ),
         "year": 1955,
         "book": "Civil Rights Landmarks",
+        "era": "1960s",
     },
 }
-
-
-# ── MCP Tool Schema ────────────────────────────────────────────────────
-
-class LookupRequest(BaseModel):
-    landmark_id: str
-
-
-class LookupResponse(BaseModel):
-    landmark_id: str
-    quote: str
-    historical_context: str
-    dialect_note: str | None = None
-    year: int
-    book: str
-
-
-# ── Tool endpoint ──────────────────────────────────────────────────────
-
-@app.post("/tools/archivist/lookup", response_model=LookupResponse)
-async def archivist_lookup(req: LookupRequest):
-    """
-    MCP Tool: archivist/lookup
-
-    Given a landmark_id, returns the deeper literary quote and historical
-    context.  This is the endpoint the frontend calls after a marker click
-    (the "handoff" from UI → agent).
-    """
-    entry = KNOWLEDGE_BASE.get(req.landmark_id)
-    if entry is None:
-        raise HTTPException(status_code=404, detail=f"Unknown landmark: {req.landmark_id}")
-    return LookupResponse(landmark_id=req.landmark_id, **entry)
-
-
-# ── Health / MCP discovery ─────────────────────────────────────────────
-
-@app.get("/")
-async def root():
-    return {
-        "agent": "ArchivistAgent",
-        "protocol": "MCP",
-        "tools": [
-            {
-                "name": "archivist/lookup",
-                "description": "Retrieve deeper literary and historical context for a landmark.",
-                "inputSchema": LookupRequest.model_json_schema(),
-            }
-        ],
-    }

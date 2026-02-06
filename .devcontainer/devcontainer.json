@@ -45,9 +45,7 @@
   // Ports to forward
   "forwardPorts": [
     3000,  // React dev server
-    8000,  // MCP / FastAPI server
-    8001,  // LinguistAgent
-    8002   // StylistAgent
+    8000   // Django MCP server (all agents)
   ],
 
   // Run after container is created

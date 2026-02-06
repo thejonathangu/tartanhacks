@@ -1,23 +1,18 @@
 """
-LinguistAgent — MCP Tool Server
+LinguistAgent — MCP Agent (Django view)
 
-Identifies period-specific slang and dialect based on the literary era.
-
-Run:  uvicorn linguist.server:app --port 8001 --reload
+Identifies period-specific slang and dialect based on the literary era,
+then enriches the response with Dedalus-powered LLM commentary.
 """
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+import json
 
-app = FastAPI(title="LinguistAgent MCP Server", version="0.1.0")
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+from core.dedalus_client import dedalus_chat
+
 
 ERA_DIALECTS: dict[str, dict] = {
     "1920s": {
@@ -66,28 +61,48 @@ ERA_DIALECTS: dict[str, dict] = {
 }
 
 
-class DialectRequest(BaseModel):
-    era: str  # e.g. "1920s", "1940s", "1960s"
+LINGUIST_SYSTEM_PROMPT = (
+    "You are the LinguistAgent, an expert in American English dialects "
+    "across different historical eras.  Given an era and its slang terms, "
+    "write a fun 2-sentence 'Did You Know?' blurb about how one of these "
+    "terms entered mainstream English.  Keep it lively and educational."
+)
 
 
-@app.post("/tools/linguist/dialect")
-async def get_dialect(req: DialectRequest):
-    entry = ERA_DIALECTS.get(req.era)
+@csrf_exempt
+@require_POST
+def dialect(request):
+    """
+    POST /tools/linguist/dialect
+    Body: { "era": "1920s" }
+    """
+    try:
+        body = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    era = body.get("era")
+    if not era:
+        return JsonResponse({"error": "era is required"}, status=400)
+
+    entry = ERA_DIALECTS.get(era)
     if entry is None:
-        raise HTTPException(status_code=404, detail=f"Unknown era: {req.era}")
-    return {"era": req.era, **entry}
+        return JsonResponse({"error": f"Unknown era: {era}"}, status=404)
 
+    # ── Dedalus enrichment ──────────────────────────────────────────
+    slang_list = ", ".join(f"'{s['term']}'" for s in entry["slang"])
+    user_msg = (
+        f"Era: {era} — {entry['era_label']}\n"
+        f"Slang terms: {slang_list}\n"
+        f"Notes: {entry['dialect_notes']}\n\n"
+        "Write a 'Did You Know?' blurb."
+    )
+    ai_blurb = dedalus_chat(LINGUIST_SYSTEM_PROMPT, user_msg)
 
-@app.get("/")
-async def root():
-    return {
-        "agent": "LinguistAgent",
-        "protocol": "MCP",
-        "tools": [
-            {
-                "name": "linguist/dialect",
-                "description": "Get period-specific slang and dialect for a literary era.",
-                "inputSchema": DialectRequest.model_json_schema(),
-            }
-        ],
-    }
+    return JsonResponse({
+        "era": era,
+        "era_label": entry["era_label"],
+        "slang": entry["slang"],
+        "dialect_notes": entry["dialect_notes"],
+        "ai_blurb": ai_blurb,
+    })
