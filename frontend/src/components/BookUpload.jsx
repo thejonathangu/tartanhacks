@@ -200,18 +200,42 @@ export default function BookUpload({ onLocationsExtracted }) {
               {result.locations_found} location{result.locations_found !== 1 ? "s" : ""} found
             </span>
           </div>
-          {result.geojson?.features?.map((f, i) => (
+          {[...(result.geojson?.features || [])]
+            .sort((a, b) => (a.properties.rank || 999) - (b.properties.rank || 999))
+            .map((f, i) => (
             <div key={i} style={{
               background: "#0d0f1a", borderRadius: "4px",
-              padding: "6px 8px", marginBottom: "4px",
+              padding: "8px 10px", marginBottom: "4px",
               fontSize: "11px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
             }}>
-              <span style={{ color: "#4ecdc4", fontWeight: 600 }}>
-                📍 {f.properties.title}
+              <span style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                minWidth: "22px",
+                height: "22px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#4ecdc433",
+                color: "#4ecdc4",
+                borderRadius: "5px",
+                flexShrink: 0,
+              }}>
+                {f.properties.rank || "?"}
               </span>
-              <span style={{ color: "#555", marginLeft: "6px" }}>
-                {f.properties.era}
-              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ color: "#4ecdc4", fontWeight: 600 }}>
+                  {f.properties.title}
+                </span>
+                {f.properties.era && (
+                  <span style={{ color: "#555", marginLeft: "6px" }}>
+                    {f.properties.era}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
           <button

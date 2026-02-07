@@ -135,9 +135,7 @@ export default function MapComponent({
           "circle-opacity": 0.12,
           "circle-stroke-width": 0,
         },
-      });
-
-      m.addLayer({
+      });      m.addLayer({
         id: "literary-markers",
         type: "circle",
         source: "literary-points",
@@ -156,6 +154,19 @@ export default function MapComponent({
           ],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
+        },
+      });      // ── Relevance number labels on markers ──
+      m.addLayer({
+        id: "literary-relevance",
+        type: "symbol",
+        source: "literary-points",
+        layout: {
+          "text-field": ["to-string", ["get", "rank"]],  // Display rank (1-N) instead of relevance score
+          "text-size": 11,
+          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        },
+        paint: {
+          "text-color": "#ffffff",
         },
       });
 
@@ -208,16 +219,17 @@ export default function MapComponent({
         ];
       } else if (era) {
         filter = ["==", ["get", "era"], era];
-      }
-      [
+      }      [
         "literary-markers",
-        "literary-glow",        "literary-labels",
+        "literary-glow",
+        "literary-relevance",
+        "literary-labels",
         "route-lines",
       ].forEach((id) => {
         if (map.getLayer(id)) map.setFilter(id, filter);
       });
       // Also filter uploaded layers
-      ["uploaded-markers", "uploaded-labels"].forEach((id) => {
+      ["uploaded-markers", "uploaded-relevance", "uploaded-labels"].forEach((id) => {
         if (map.getLayer(id)) map.setFilter(id, filter);
       });
     });
@@ -265,10 +277,8 @@ export default function MapComponent({
       "route-lines",
     ].forEach((id) => {
       if (map.getLayer(id)) map.setFilter(id, filter);
-    });
-
-    // Apply to uploaded layers too
-    ["uploaded-markers", "uploaded-labels"].forEach((id) => {
+    });    // Apply to uploaded layers too
+    ["uploaded-markers", "uploaded-relevance", "uploaded-labels"].forEach((id) => {
       if (map.getLayer(id)) map.setFilter(id, filter);
     });
 
@@ -398,12 +408,14 @@ export default function MapComponent({
     function doAdd() {
       if (cancelled) return;
       const data = uploadedLocRef.current;
-      if (!data) return;
-
-      // Remove old layers/source if they exist
+      if (!data) return;      // Remove old layers/source if they exist
       try {
         if (map.getLayer("uploaded-markers"))
           map.removeLayer("uploaded-markers");
+      } catch (_) {}
+      try {
+        if (map.getLayer("uploaded-relevance"))
+          map.removeLayer("uploaded-relevance");
       } catch (_) {}
       try {
         if (map.getLayer("uploaded-labels")) map.removeLayer("uploaded-labels");
@@ -413,9 +425,7 @@ export default function MapComponent({
           map.removeSource("uploaded-points");
       } catch (_) {}
 
-      map.addSource("uploaded-points", { type: "geojson", data });
-
-      map.addLayer({
+      map.addSource("uploaded-points", { type: "geojson", data });      map.addLayer({
         id: "uploaded-markers",
         type: "circle",
         source: "uploaded-points",
@@ -425,6 +435,19 @@ export default function MapComponent({
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
           "circle-opacity": 0.9,
+        },
+      });      // ── Relevance number labels on uploaded markers ──
+      map.addLayer({
+        id: "uploaded-relevance",
+        type: "symbol",
+        source: "uploaded-points",
+        layout: {
+          "text-field": ["to-string", ["get", "rank"]],  // Display rank (1-N) instead of relevance score
+          "text-size": 11,
+          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        },
+        paint: {
+          "text-color": "#ffffff",
         },
       });
 
