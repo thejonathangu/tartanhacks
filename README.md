@@ -8,7 +8,7 @@
 
 ## 🏗️ Architecture — Modular MCP Orchestration
 
-This project demonstrates **agentic task delegation** using the Model Context Protocol. Instead of one monolithic prompt, a **ConductorAgent** orchestrates three specialist MCP servers in parallel:
+This project demonstrates **agentic task delegation** using the Model Context Protocol. Instead of one monolithic prompt, a **ConductorAgent** orchestrates four specialist MCP servers in parallel:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -23,38 +23,52 @@ This project demonstrates **agentic task delegation** using the Model Context Pr
 └───────────────┬─────────────────────────────────────────────┘
                 │
                 ▼
-┌───────────────────────────────────────────────────────────┐
-│  ConductorAgent (Django)                                  │
-│  "The Brain" — receives user action, reasons about which  │
-│  specialists to invoke, fans out PARALLEL requests        │
-│                                                           │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │ 🏛 Archivist │  │ 🗣 Linguist  │  │ 🎨 Stylist   │    │
-│  │ Agent        │  │ Agent        │  │ Agent        │    │
-│  │              │  │              │  │              │    │
-│  │ get_         │  │ analyze_     │  │ generate_    │    │
-│  │ historical_  │  │ period_      │  │ map_style    │    │
-│  │ context      │  │ dialect      │  │              │    │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │
-│         │                 │                  │            │
-│         └────────┬────────┘──────────────────┘            │
-│                  ▼                                        │
-│         Dedalus Labs API (openai/gpt-4o)                  │
-│         Each agent enriches its response with AI          │
-│                  │                                        │
-│                  ▼                                        │
-│         🎼 Conductor Synthesis                            │
-│         Merges all results + generates unified narrative  │
-└───────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  ConductorAgent (Django)                                         │
+│  "The Brain" — receives user action, reasons about which         │
+│  specialists to invoke, fans out PARALLEL requests               │
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ 🏛 Archivist │  │ 🗣 Linguist  │  │ 🎨 Stylist   │          │
+│  │ Agent        │  │ Agent        │  │ Agent        │          │
+│  │              │  │              │  │              │          │
+│  │ get_         │  │ analyze_     │  │ generate_    │          │
+│  │ historical_  │  │ period_      │  │ map_style    │          │
+│  │ context      │  │ dialect      │  │              │          │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘          │
+│         │                 │                  │                  │
+│         └────────┬────────┘──────────────────┘                  │
+│                  │                                              │
+│                  │        ┌──────────────┐                      │
+│                  │        │ 📚 Librarian │                      │
+│                  │        │ Agent        │                      │
+│                  │        │              │                      │
+│                  │        │ search_      │                      │
+│                  │        │ books        │                      │
+│                  │        │              │                      │
+│                  │        └──────┬───────┘                      │
+│                  │               │                              │
+│                  │               │ Open Library API             │
+│                  │               │ (fuzzy book search)          │
+│                  │               │                              │
+│                  ▼               ▼                              │
+│         Dedalus Labs API (openai/gpt-4o)                        │
+│         Each agent enriches its response with AI                │
+│                  │                                              │
+│                  ▼                                              │
+│         🎼 Conductor Synthesis                                  │
+│         Merges all results + generates unified narrative        │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### The Three Specialist MCP Servers
+### The Four Specialist MCP Servers
 
-| Agent                 | Tool                     | Role              | What It Does                                                                                                                    |
-| --------------------- | ------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| 🏛 **ArchivistAgent** | `get_historical_context` | Data & Facts      | Retrieves verified quotes, historical context, and dialect notes from a curated knowledge base, then enriches with AI deep-dive |
-| 🗣 **LinguistAgent**  | `analyze_period_dialect` | Cultural Analysis | Identifies era-specific slang and linguistic patterns (e.g., 1920s Harlem jive, 1940s Cantonese-English code-switching)         |
-| 🎨 **StylistAgent**   | `generate_map_style`     | Visual Design     | Generates Mapbox Style JSON overrides and color palettes to change the map's visual "vibe" per era                              |
+| Agent                  | Tool                     | Role              | What It Does                                                                                                                    |
+| ---------------------- | ------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 🏛 **ArchivistAgent**  | `get_historical_context` | Data & Facts      | Retrieves verified quotes, historical context, and dialect notes from a curated knowledge base, then enriches with AI deep-dive |
+| 🗣 **LinguistAgent**   | `analyze_period_dialect` | Cultural Analysis | Identifies era-specific slang and linguistic patterns (e.g., 1920s Harlem jive, 1940s Cantonese-English code-switching)         |
+| 🎨 **StylistAgent**    | `generate_map_style`     | Visual Design     | Generates Mapbox Style JSON overrides and color palettes to change the map's visual "vibe" per era                              |
+| 📚 **LibrarianAgent**  | `search_books`           | Book Discovery    | Searches Open Library API for books by title with fuzzy matching, returns cover images, authors, and publication metadata       |
 
 ### The Delegation Workflow
 
@@ -89,7 +103,7 @@ This project demonstrates **agentic task delegation** using the Model Context Pr
 ## 🚀 Quick Start
 
 ```bash
-# 1. Start the MCP backend (Django + 3 agents + Conductor)
+# 1. Start the MCP backend (Django + 4 agents + Conductor)
 cd mcp-servers
 pip install -r requirements.txt
 python manage.py runserver 0.0.0.0:8000
@@ -129,6 +143,7 @@ VITE_MCP_BASE_URL=http://localhost:8000
 | AI Provider   | Dedalus Labs (OpenAI-compatible, GPT-4o)        |
 | Protocol      | Model Context Protocol (MCP)                    |
 | Orchestration | ConductorAgent with parallel ThreadPoolExecutor |
+| Book Search   | Open Library API (fuzzy title matching)         |
 
 ## 🏆 Why This Wins
 
