@@ -23,6 +23,7 @@ from django.views.decorators.http import require_POST
 
 from archivist.knowledge_base import KNOWLEDGE_BASE
 from archivist.views import _archivist_lookup
+from librarian.views import _librarian_search
 from linguist.views import _linguist_dialect
 from stylist.views import _stylist_style
 from core.dedalus_client import dedalus_chat
@@ -58,6 +59,7 @@ def orchestrate(request):
     Body: { "landmark_id": "hr-harlem" }
        OR { "era": "1920s" }
        OR { "landmark_id": "hr-harlem", "era": "1920s" }
+       OR { "action": "search", "query": "joy luck club", "limit": 10 }
 
     Returns a unified response with delegation timeline.
     """
@@ -70,6 +72,43 @@ def orchestrate(request):
 
     landmark_id = body.get("landmark_id")
     era = body.get("era")
+    action = body.get("action")
+
+    # ── Book search shortcut — delegates to LibrarianAgent only ──
+    if action == "search":
+        query = body.get("query")
+        if not query:
+            return JsonResponse({"error": "query is required for search action"}, status=400)
+        limit = body.get("limit", 10)
+        t0 = time.perf_counter()
+        try:
+            result = _librarian_search(query, limit=limit)
+            elapsed = round((time.perf_counter() - t0) * 1000)
+            total = round((time.perf_counter() - t_start) * 1000)
+            return JsonResponse({
+                "librarian": result,
+                "timeline": [{
+                    "agent": "LibrarianAgent",
+                    "tool": "search_books",
+                    "status": "success",
+                    "elapsed_ms": elapsed,
+                }],
+                "total_ms": total,
+            })
+        except Exception as exc:
+            elapsed = round((time.perf_counter() - t0) * 1000)
+            total = round((time.perf_counter() - t_start) * 1000)
+            return JsonResponse({
+                "error": str(exc),
+                "timeline": [{
+                    "agent": "LibrarianAgent",
+                    "tool": "search_books",
+                    "status": "error",
+                    "elapsed_ms": elapsed,
+                    "error": str(exc),
+                }],
+                "total_ms": total,
+            }, status=502)
 
     # If we have a landmark_id, infer the era from the knowledge base
     if landmark_id and not era:

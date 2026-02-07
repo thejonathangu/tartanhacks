@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import MapComponent from "./components/MapComponent";
+import BookSearch from "./components/BookSearch";
 import { fetchConductorOrchestrate } from "./api/archivistClient";
 
 /* ── Era metadata ──────────────────────────────────────────────── */
@@ -133,6 +134,13 @@ export default function App() {
 
   // Conductor response (unified: archivist + linguist + stylist + synthesis + timeline)
   const [conductorResult, setConductorResult] = useState(null);
+  const [selectedBook, setSelectedBook] = useState(null);
+
+  /* ── Book selection from LibrarianAgent search ──────────────── */
+  const handleBookSelect = useCallback((book) => {
+    setSelectedBook(book);
+    console.log("Selected book for processing:", book);
+  }, []);
 
   /* ── Marker click → Conductor orchestration ─────────────────── */
   const handleMarkerClick = useCallback(async (feature) => {
@@ -321,6 +329,7 @@ export default function App() {
           <div style={{ display: "flex", gap: "12px" }}>
             {[
               { name: "Conductor", icon: "🎼", desc: "Orchestrator" },
+              { name: "Librarian", icon: "📚", desc: "Search" },
               { name: "Archivist", icon: "🏛", desc: "Data" },
               { name: "Linguist", icon: "🗣", desc: "Language" },
               { name: "Stylist", icon: "🎨", desc: "Visual" },
@@ -353,6 +362,79 @@ export default function App() {
 
         {/* Content — scrollable */}
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+          {/* Book Search */}
+          <div
+            style={{
+              marginBottom: "12px",
+              borderBottom: "1px solid #1e2235",
+              paddingBottom: "12px",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "10px",
+                color: "#555",
+                margin: "0 0 8px",
+                textTransform: "uppercase",
+                letterSpacing: "1.5px",
+                fontWeight: 600,
+              }}
+            >
+              📚 Book Discovery — LibrarianAgent
+            </p>
+            <BookSearch
+              onBookSelect={handleBookSelect}
+              accentColor={eraColor}
+            />
+            {selectedBook && (
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, #0a2a1a 0%, #0d0f1a 100%)",
+                  borderRadius: "8px",
+                  padding: "12px",
+                  border: "1px solid #1a3d2a",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <span style={{ fontSize: "14px" }}>📚</span>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#4ecdc4",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Selected Book
+                  </span>
+                </div>
+                <p
+                  style={{
+                    margin: "0 0 2px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "#eee",
+                  }}
+                >
+                  {selectedBook.title}
+                </p>
+                <p style={{ margin: 0, fontSize: "11px", color: "#999" }}>
+                  {selectedBook.authors?.join(", ") || "Unknown author"}
+                  {selectedBook.first_publish_year
+                    ? ` · ${selectedBook.first_publish_year}`
+                    : ""}
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Loading */}
           {loading && (
             <div

@@ -2,6 +2,20 @@ const MCP_BASE_URL = import.meta.env.VITE_MCP_BASE_URL || "";
 
 // ─── Individual Agent Endpoints (direct calls) ─────────────────────
 
+/**
+ * LibrarianAgent — Search Open Library for books by title.
+ * Returns { query, num_found, books: [...] }
+ */
+export async function fetchLibrarianSearch(query, limit = 10) {
+  const res = await fetch(`${MCP_BASE_URL}/tools/librarian/search`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, limit }),
+  });
+  if (!res.ok) throw new Error(`LibrarianAgent error: ${res.status}`);
+  return res.json();
+}
+
 export async function fetchArchivistContext(landmarkId) {
   const res = await fetch(`${MCP_BASE_URL}/tools/archivist/lookup`, {
     method: "POST",

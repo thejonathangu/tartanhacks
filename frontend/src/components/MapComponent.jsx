@@ -45,6 +45,7 @@ export default function MapComponent({
   const popupRef = useRef(null);
   const onMarkerClickRef = useRef(onMarkerClick);
   const filterEraRef = useRef(filterEra);
+  const styleLoadedRef = useRef(false);
   const [activeStyle, setActiveStyle] = useState("Satellite");
 
   useEffect(() => {
@@ -54,40 +55,9 @@ export default function MapComponent({
     filterEraRef.current = filterEra;
   }, [filterEra]);
 
-  if (!MAPBOX_TOKEN) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "100%",
-          height: "100%",
-          background: "#0d0d0d",
-          color: "#fff",
-          fontFamily: "system-ui, sans-serif",
-          flexDirection: "column",
-          gap: "16px",
-        }}
-      >
-        <h1 style={{ fontSize: "48px", margin: 0 }}>🗺️</h1>
-        <h2 style={{ margin: 0 }}>Mapbox token not set</h2>
-        <pre
-          style={{
-            background: "#1a1a2e",
-            padding: "12px 20px",
-            borderRadius: "8px",
-            color: "#4ecdc4",
-            fontSize: "13px",
-          }}
-        >
-          {`VITE_MAPBOX_ACCESS_TOKEN=pk.your_token_here`}
-        </pre>
-      </div>
-    );
+  if (MAPBOX_TOKEN) {
+    mapboxgl.accessToken = MAPBOX_TOKEN;
   }
-
-  mapboxgl.accessToken = MAPBOX_TOKEN;
 
   // ── Initialize map ──────────────────────────────────────────────
   useEffect(() => {
@@ -217,6 +187,7 @@ export default function MapComponent({
 
     map.on("load", () => addAllLayers(map));
     map.on("style.load", () => {
+      styleLoadedRef.current = true;
       addAllLayers(map);
       const era = filterEraRef.current;
       const filter = era ? ["==", ["get", "era"], era] : null;
@@ -237,13 +208,14 @@ export default function MapComponent({
   // ── Style switching ──
   useEffect(() => {
     if (!mapRef.current) return;
+    styleLoadedRef.current = false;
     mapRef.current.setStyle(MAP_STYLES[activeStyle]);
   }, [activeStyle]);
 
   // ── Era filtering ──
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !styleLoadedRef.current || !map.isStyleLoaded()) return;
 
     const filter = filterEra ? ["==", ["get", "era"], filterEra] : null;
     [
@@ -271,7 +243,13 @@ export default function MapComponent({
   // ── Apply StylistAgent overrides ──
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !stylistOverrides || !map.isStyleLoaded()) return;
+    if (
+      !map ||
+      !stylistOverrides ||
+      !styleLoadedRef.current ||
+      !map.isStyleLoaded()
+    )
+      return;
 
     const po = stylistOverrides.paint_overrides;
     if (!po) return;
@@ -359,6 +337,39 @@ export default function MapComponent({
       .setHTML(html)
       .addTo(mapRef.current);
   }, [popupContent]);
+
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+          height: "100%",
+          background: "#0d0d0d",
+          color: "#fff",
+          fontFamily: "system-ui, sans-serif",
+          flexDirection: "column",
+          gap: "16px",
+        }}
+      >
+        <h1 style={{ fontSize: "48px", margin: 0 }}>🗺️</h1>
+        <h2 style={{ margin: 0 }}>Mapbox token not set</h2>
+        <pre
+          style={{
+            background: "#1a1a2e",
+            padding: "12px 20px",
+            borderRadius: "8px",
+            color: "#4ecdc4",
+            fontSize: "13px",
+          }}
+        >
+          {`VITE_MAPBOX_ACCESS_TOKEN=pk.your_token_here`}
+        </pre>
+      </div>
+    );
+  }
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>

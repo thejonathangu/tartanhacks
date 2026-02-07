@@ -10,6 +10,7 @@ urlpatterns = [
     path("", index, name="index"),
     path("orchestrate", orchestrate, name="conductor-orchestrate"),
     path("tools/archivist/", include("archivist.urls")),
+    path("tools/librarian/", include("librarian.urls")),
     path("tools/linguist/", include("linguist.urls")),
     path("tools/stylist/", include("stylist.urls")),
 ]
