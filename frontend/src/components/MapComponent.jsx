@@ -347,12 +347,15 @@ export default function MapComponent({
 
       // Fit map to show all uploaded points
       if (uploadedBookLocations.features.length > 0) {
-        const bounds = uploadedBookLocations.features.reduce((b, f) => {
-          return b.extend(f.geometry.coordinates);
-        }, new mapboxgl.LngLatBounds(
-          uploadedBookLocations.features[0].geometry.coordinates,
-          uploadedBookLocations.features[0].geometry.coordinates
-        ));
+        const bounds = uploadedBookLocations.features.reduce(
+          (b, f) => {
+            return b.extend(f.geometry.coordinates);
+          },
+          new mapboxgl.LngLatBounds(
+            uploadedBookLocations.features[0].geometry.coordinates,
+            uploadedBookLocations.features[0].geometry.coordinates,
+          ),
+        );
         map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
       }
     };
