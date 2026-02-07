@@ -248,8 +248,8 @@ export default function MapComponent({ onMarkerClick, popupContent, uploadedGeoJ
           : "#4ecdc4";
 
     // Google Street View static image
-    const GOOGLE_API_KEY = "AIzaSyB-6PzSoBo86Cf-ZWiKiVvQt4sdHkZA19A";
-    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=400x200&location=${lat},${lng}&fov=90&heading=235&pitch=10&key=${GOOGLE_API_KEY}`;
+    const googleApiKey = import.meta.env.VITE_GOOGLE_API_KEY || "";
+    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=400x200&location=${lat},${lng}&fov=90&heading=235&pitch=10&key=${googleApiKey}`;
 
     const html = `
       <div style="max-width:320px;font-family:system-ui,sans-serif;color:#1a1a2e;">
