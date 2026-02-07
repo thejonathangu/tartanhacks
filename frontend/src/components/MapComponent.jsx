@@ -41,7 +41,6 @@ export default function MapComponent({
   yearRange,
   stylistOverrides,
   uploadedBookLocations,
-  heatmapOn,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -301,64 +300,6 @@ export default function MapComponent({
     }
   }, [yearRange, filterEra]); // eslint-disable-line react-hooks/exhaustive-deps
 
-
-
-  // ── Heatmap layer toggle ──
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !styleLoadedRef.current || !map.isStyleLoaded()) return;
-
-    if (heatmapOn) {
-      // Combine curated + uploaded features for heatmap
-      const uploadedFeats = uploadedBookLocations?.features || [];
-      const combinedGeoJSON = {
-        type: "FeatureCollection",
-        features: [...literaryGeoJSON.features, ...uploadedFeats],
-      };
-      if (!map.getSource("heatmap-source")) {
-        map.addSource("heatmap-source", { type: "geojson", data: combinedGeoJSON });
-      } else {
-        map.getSource("heatmap-source").setData(combinedGeoJSON);
-      }
-      if (!map.getLayer("literary-heatmap")) {
-        map.addLayer(
-          {
-            id: "literary-heatmap",
-            type: "heatmap",
-            source: "heatmap-source",
-            paint: {
-              "heatmap-weight": 1,
-              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 1, 9, 3],
-              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 30, 9, 60],
-              "heatmap-color": [
-                "interpolate",
-                ["linear"],
-                ["heatmap-density"],
-                0,
-                "rgba(0,0,0,0)",
-                0.2,
-                "#2c1654",
-                0.4,
-                "#4ecdc4",
-                0.6,
-                "#e6b800",
-                0.8,
-                "#ff6b6b",
-                1,
-                "#ffffff",
-              ],
-              "heatmap-opacity": 0.7,
-            },
-          },
-          "literary-glow",
-        ); // insert below marker layers
-      }
-    } else {
-      if (map.getLayer("literary-heatmap")) map.removeLayer("literary-heatmap");
-      if (map.getSource("heatmap-source")) map.removeSource("heatmap-source");
-    }
-  }, [heatmapOn, uploadedBookLocations]);
-
   // ── Cross-book connection lines ──
   useEffect(() => {
     const map = mapRef.current;
@@ -460,9 +401,17 @@ export default function MapComponent({
       if (!data) return;
 
       // Remove old layers/source if they exist
-      try { if (map.getLayer("uploaded-markers")) map.removeLayer("uploaded-markers"); } catch (_) {}
-      try { if (map.getLayer("uploaded-labels")) map.removeLayer("uploaded-labels"); } catch (_) {}
-      try { if (map.getSource("uploaded-points")) map.removeSource("uploaded-points"); } catch (_) {}
+      try {
+        if (map.getLayer("uploaded-markers"))
+          map.removeLayer("uploaded-markers");
+      } catch (_) {}
+      try {
+        if (map.getLayer("uploaded-labels")) map.removeLayer("uploaded-labels");
+      } catch (_) {}
+      try {
+        if (map.getSource("uploaded-points"))
+          map.removeSource("uploaded-points");
+      } catch (_) {}
 
       map.addSource("uploaded-points", { type: "geojson", data });
 
@@ -520,8 +469,12 @@ export default function MapComponent({
       map.flyTo({ center: coords, zoom: 14, speed: 1.2, pitch: 45 });
       if (onMarkerClickRef.current) onMarkerClickRef.current(feature);
     }
-    function onEnterUploaded() { map.getCanvas().style.cursor = "pointer"; }
-    function onLeaveUploaded() { map.getCanvas().style.cursor = ""; }
+    function onEnterUploaded() {
+      map.getCanvas().style.cursor = "pointer";
+    }
+    function onLeaveUploaded() {
+      map.getCanvas().style.cursor = "";
+    }
 
     // Robust approach: try immediately, retry every 200ms up to 3s,
     // and also listen for style.load
@@ -541,9 +494,15 @@ export default function MapComponent({
     return () => {
       cancelled = true;
       map.off("style.load", tryAdd);
-      try { map.off("click", "uploaded-markers", onClickUploaded); } catch (_) {}
-      try { map.off("mouseenter", "uploaded-markers", onEnterUploaded); } catch (_) {}
-      try { map.off("mouseleave", "uploaded-markers", onLeaveUploaded); } catch (_) {}
+      try {
+        map.off("click", "uploaded-markers", onClickUploaded);
+      } catch (_) {}
+      try {
+        map.off("mouseenter", "uploaded-markers", onEnterUploaded);
+      } catch (_) {}
+      try {
+        map.off("mouseleave", "uploaded-markers", onLeaveUploaded);
+      } catch (_) {}
     };
   }, [uploadedBookLocations]);
 

@@ -167,8 +167,7 @@ export default function App() {
   const [narrationEnabled, setNarrationEnabled] = useState(false);
   const synthRef = useRef(null);
 
-  // Heatmap toggle
-  const [heatmapOn, setHeatmapOn] = useState(false);
+
 
   /* ── Compute global year range from curated + uploaded data ── */
   const globalYearRange = useMemo(() => {
@@ -640,7 +639,7 @@ export default function App() {
           ))}
         </div>
 
-        {/* ── Story Mode + Narration + Heatmap Controls ────────── */}
+        {/* ── Story Mode + Narration Controls ────────── */}
         <div
           style={{
             padding: "8px 20px",
@@ -692,24 +691,6 @@ export default function App() {
             }}
           >
             {narrationEnabled ? "🔊 On" : "🔇 Narrate"}
-          </button>
-          {/* Heatmap */}
-          <button
-            onClick={() => setHeatmapOn(!heatmapOn)}
-            style={{
-              background: heatmapOn ? "#e6b80022" : "#141728",
-              color: heatmapOn ? "#e6b800" : "#aaa",
-              border: `1px solid ${heatmapOn ? "#e6b80066" : "#1e2235"}`,
-              borderRadius: "6px",
-              padding: "5px 10px",
-              cursor: "pointer",
-              fontSize: "10px",
-              fontWeight: 600,
-              fontFamily: "system-ui, sans-serif",
-              transition: "all 0.2s",
-            }}
-          >
-            {heatmapOn ? "🔥 Heatmap" : "🔥 Heat"}
           </button>
         </div>
 
@@ -1661,7 +1642,6 @@ export default function App() {
           yearRange={yearRange}
           stylistOverrides={stylist}
           uploadedBookLocations={uploadedBookLocations}
-          heatmapOn={heatmapOn}
         />
       </div>
 
