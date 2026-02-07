@@ -7,7 +7,7 @@ def index(request):
     return JsonResponse({
         "project": "Living Literary Map",
         "protocol": "MCP (Model Context Protocol)",
-        "architecture": "Conductor → 3 Specialist MCP Agents",
+        "architecture": "Conductor → 4 Specialist MCP Agents",
         "orchestrator": {
             "name": "ConductorAgent",
             "endpoint": "/orchestrate",
