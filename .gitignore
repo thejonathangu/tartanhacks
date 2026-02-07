@@ -14,8 +14,6 @@ venv/
 frontend/dist/
 frontend/build/
 
-# Local config overrides (may contain local envDir or machine-specific settings)
-frontend/vite.config.js
 
 # IDE
 .idea/

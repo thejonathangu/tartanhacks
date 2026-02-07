@@ -1,0 +1,48 @@
+# Render Blueprint — deploys backend + frontend from one repo
+# https://render.com/docs/blueprint-spec
+
+services:
+  # ── Django Backend (Web Service) ──────────────────────────
+  - type: web
+    name: literary-map-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: mcp-servers
+    buildCommand: ./build.sh
+    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "false"
+      - key: DEDALUS_API_KEY
+        sync: false          # you'll set this manually in the Render dashboard
+      - key: DEDALUS_MODEL
+        value: openai/gpt-4o
+      - key: PYTHON_VERSION
+        value: "3.11.6"
+
+  # ── React Frontend (Static Site) ──────────────────────────
+  - type: web
+    name: literary-map
+    runtime: static
+    region: oregon
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_MAPBOX_ACCESS_TOKEN
+        sync: false          # set manually in Render dashboard
+      - key: VITE_MCP_BASE_URL
+        fromService:
+          type: web
+          name: literary-map-api
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_GOOGLE_API_KEY
+        sync: false          # set manually in Render dashboard
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
