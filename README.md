@@ -10,7 +10,7 @@
 
 This project demonstrates **agentic task delegation** using the Model Context Protocol. Instead of one monolithic prompt, a **ConductorAgent** orchestrates three specialist MCP servers in parallel:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  Frontend (React + Mapbox GL JS)                            │
 │  ┌──────────┐  ┌──────────────┐  ┌───────────────────────┐  │
@@ -107,13 +107,13 @@ cd dist && python3 -m http.server 3000 --bind 0.0.0.0
 
 **`mcp-servers/.env`**
 
-```
+```env
 DEDALUS_API_KEY=dsk-live-...
 ```
 
 **`frontend/.env`**
 
-```
+```env
 VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1...
 VITE_MCP_BASE_URL=http://localhost:8000
 ```
