@@ -73,6 +73,9 @@ def orchestrate(request):
     landmark_id = body.get("landmark_id")
     era = body.get("era")
     action = body.get("action")
+    # feature_data is sent by the frontend for uploaded-book landmarks
+    # that aren't in the curated KNOWLEDGE_BASE
+    feature_data = body.get("feature_data")
 
     # ── Book search shortcut — delegates to LibrarianAgent only ──
     if action == "search":
@@ -115,6 +118,8 @@ def orchestrate(request):
         entry = KNOWLEDGE_BASE.get(landmark_id)
         if entry:
             era = entry.get("era")
+        elif feature_data:
+            era = feature_data.get("era")
 
     if not landmark_id and not era:
         return JsonResponse(
@@ -129,7 +134,7 @@ def orchestrate(request):
     with ThreadPoolExecutor(max_workers=3) as pool:
         if landmark_id:
             futures["archivist"] = pool.submit(
-                _timed_call, "ArchivistAgent", _archivist_lookup, landmark_id
+                _timed_call, "ArchivistAgent", _archivist_lookup, landmark_id, feature_data
             )
         if era:
             futures["linguist"] = pool.submit(

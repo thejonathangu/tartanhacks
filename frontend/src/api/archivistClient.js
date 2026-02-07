@@ -63,6 +63,21 @@ export async function uploadBookPDF(file, title = "") {
   return res.json();
 }
 
+/**
+ * Extract locations from a book title (no PDF needed).
+ * Uses Dedalus AI to recall notable locations from the book.
+ * Returns { book_title, author, locations_found, geojson: {...} }
+ */
+export async function fetchLocationsFromTitle(title, author = "", year = "") {
+  const res = await fetch(`${MCP_BASE_URL}/extract-from-title`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, author, year }),
+  });
+  if (!res.ok) throw new Error(`Title extraction error: ${res.status}`);
+  return res.json();
+}
+
 // ─── Conductor Endpoint (orchestrated parallel call) ────────────────
 
 /**
@@ -70,10 +85,15 @@ export async function uploadBookPDF(file, title = "") {
  * to all 3 specialist MCP agents and returns a unified response
  * with a delegation timeline.
  */
-export async function fetchConductorOrchestrate({ landmarkId, era }) {
+export async function fetchConductorOrchestrate({
+  landmarkId,
+  era,
+  featureData,
+}) {
   const body = {};
   if (landmarkId) body.landmark_id = landmarkId;
   if (era) body.era = era;
+  if (featureData) body.feature_data = featureData;
 
   const res = await fetch(`${MCP_BASE_URL}/orchestrate`, {
     method: "POST",

@@ -26,30 +26,62 @@ ARCHIVIST_SYSTEM_PROMPT = (
 )
 
 
-def _archivist_lookup(landmark_id: str) -> dict:
+def _archivist_lookup(landmark_id: str, feature_data: dict = None) -> dict:
     """
     Internal function — callable by the Conductor for parallel orchestration.
     Returns a plain dict (not an HttpResponse).
+
+    If the landmark_id is in the knowledge base, use the curated entry.
+    Otherwise, fall back to feature_data (from uploaded PDFs) and still
+    call Dedalus for an AI deep-dive.
     """
     entry = KNOWLEDGE_BASE.get(landmark_id)
-    if entry is None:
+
+    if entry is not None:
+        # Curated landmark — use knowledge base
+        user_msg = (
+            f"Book: {entry['book']} ({entry['era']})\n"
+            f"Quote: \"{entry['quote']}\"\n"
+            f"Base context: {entry['historical_context']}\n\n"
+            "Give me an enriched 2–3 sentence deep-dive insight."
+        )
+        ai_insight = dedalus_chat(ARCHIVIST_SYSTEM_PROMPT, user_msg)
+
+        return {
+            "landmark_id": landmark_id,
+            "quote": entry["quote"],
+            "historical_context": entry["historical_context"],
+            "dialect_note": entry.get("dialect_note"),
+            "year": entry["year"],
+            "book": entry["book"],
+            "ai_insight": ai_insight,
+        }
+
+    # Dynamic landmark — use feature_data from the uploaded PDF
+    if feature_data is None:
         raise ValueError(f"Unknown landmark: {landmark_id}")
 
+    book = feature_data.get("book", "Unknown")
+    quote = feature_data.get("quote", "")
+    context = feature_data.get("historical_context", "")
+    year = feature_data.get("year", 2000)
+    era = feature_data.get("era", "2000s")
+
     user_msg = (
-        f"Book: {entry['book']} ({entry['era']})\n"
-        f"Quote: \"{entry['quote']}\"\n"
-        f"Base context: {entry['historical_context']}\n\n"
+        f"Book: {book} ({era})\n"
+        f"Quote: \"{quote}\"\n"
+        f"Base context: {context}\n\n"
         "Give me an enriched 2–3 sentence deep-dive insight."
     )
     ai_insight = dedalus_chat(ARCHIVIST_SYSTEM_PROMPT, user_msg)
 
     return {
         "landmark_id": landmark_id,
-        "quote": entry["quote"],
-        "historical_context": entry["historical_context"],
-        "dialect_note": entry.get("dialect_note"),
-        "year": entry["year"],
-        "book": entry["book"],
+        "quote": quote,
+        "historical_context": context,
+        "dialect_note": None,
+        "year": year,
+        "book": book,
         "ai_insight": ai_insight,
     }
 

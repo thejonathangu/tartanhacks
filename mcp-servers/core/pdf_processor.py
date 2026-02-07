@@ -65,6 +65,30 @@ Rules:
 - Return ONLY the JSON array, no other text"""
 
 
+def _extract_complete_objects(text: str) -> list[dict]:
+    """
+    Extract complete JSON objects from a potentially truncated JSON array.
+    """
+    objects = []
+    depth = 0
+    start = None
+    for i, ch in enumerate(text):
+        if ch == '{':
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+            if depth == 0 and start is not None:
+                try:
+                    obj = json.loads(text[start:i + 1])
+                    objects.append(obj)
+                except json.JSONDecodeError:
+                    pass
+                start = None
+    return objects
+
+
 def extract_locations_from_text(text: str, book_title: str = "Unknown") -> list[dict]:
     """Use Dedalus AI to extract geographic locations from book text."""
     truncated = _truncate(text)
@@ -74,18 +98,24 @@ def extract_locations_from_text(text: str, book_title: str = "Unknown") -> list[
     raw_response = dedalus_chat(
         system_prompt=LOCATION_EXTRACTION_PROMPT,
         user_message=user_msg,
-        max_tokens=2048,
+        max_tokens=4096,
     )
 
     # Parse the JSON from the response
     try:
-        # Try to find JSON array in the response
-        json_match = re.search(r'\[.*\]', raw_response, re.DOTALL)
-        if json_match:
-            locations = json.loads(json_match.group())
-        else:
-            locations = json.loads(raw_response)
-    except json.JSONDecodeError:
+        # Strip markdown code fences if present
+        cleaned = raw_response.strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r'^```\w*\s*', '', cleaned)
+            cleaned = re.sub(r'\s*```\s*$', '', cleaned)
+
+        # First, try to parse the full cleaned text directly
+        try:
+            locations = json.loads(cleaned)
+        except json.JSONDecodeError:
+            # If the response was truncated, extract complete JSON objects
+            locations = _extract_complete_objects(cleaned)
+    except Exception:
         return []
 
     return locations

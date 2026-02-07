@@ -68,30 +68,74 @@ LINGUIST_SYSTEM_PROMPT = (
     "terms entered mainstream English.  Keep it lively and educational."
 )
 
+LINGUIST_DYNAMIC_PROMPT = (
+    "You are the LinguistAgent, an expert in American English dialects. "
+    "Given a decade/era, identify 3-5 notable slang terms or linguistic "
+    "features from that period.  Return a JSON object with this structure:\n"
+    '{"era_label": "Label for the era", "slang": [{"term": "word", "meaning": "definition"}], '
+    '"dialect_notes": "Brief notes on the dialect"}\n'
+    "Return ONLY valid JSON, no other text."
+)
+
 
 def _linguist_dialect(era: str) -> dict:
     """
     Internal function — callable by the Conductor for parallel orchestration.
-    Returns a plain dict.
+    Returns a plain dict. For unknown eras, uses Dedalus to generate dialect info.
     """
     entry = ERA_DIALECTS.get(era)
-    if entry is None:
-        raise ValueError(f"Unknown era: {era}")
 
-    slang_list = ", ".join(f"'{s['term']}'" for s in entry["slang"])
-    user_msg = (
-        f"Era: {era} — {entry['era_label']}\n"
+    if entry is not None:
+        # Known era — use curated data
+        slang_list = ", ".join(f"'{s['term']}'" for s in entry["slang"])
+        user_msg = (
+            f"Era: {era} — {entry['era_label']}\n"
+            f"Slang terms: {slang_list}\n"
+            f"Notes: {entry['dialect_notes']}\n\n"
+            "Write a 'Did You Know?' blurb."
+        )
+        ai_blurb = dedalus_chat(LINGUIST_SYSTEM_PROMPT, user_msg)
+
+        return {
+            "era": era,
+            "era_label": entry["era_label"],
+            "slang": entry["slang"],
+            "dialect_notes": entry["dialect_notes"],
+            "ai_blurb": ai_blurb,
+        }
+
+    # Unknown era — generate dynamically via Dedalus
+    import json as _json
+    import re as _re
+
+    raw = dedalus_chat(LINGUIST_DYNAMIC_PROMPT, f"Era: {era}")
+    try:
+        json_match = _re.search(r'\{.*\}', raw, _re.DOTALL)
+        if json_match:
+            data = _json.loads(json_match.group())
+        else:
+            data = _json.loads(raw)
+    except _json.JSONDecodeError:
+        data = {}
+
+    era_label = data.get("era_label", f"{era} Era")
+    slang = data.get("slang", [])
+    dialect_notes = data.get("dialect_notes", f"Linguistic features of the {era}.")
+
+    slang_list = ", ".join(f"'{s['term']}'" for s in slang[:5]) if slang else era
+    blurb_msg = (
+        f"Era: {era} — {era_label}\n"
         f"Slang terms: {slang_list}\n"
-        f"Notes: {entry['dialect_notes']}\n\n"
+        f"Notes: {dialect_notes}\n\n"
         "Write a 'Did You Know?' blurb."
     )
-    ai_blurb = dedalus_chat(LINGUIST_SYSTEM_PROMPT, user_msg)
+    ai_blurb = dedalus_chat(LINGUIST_SYSTEM_PROMPT, blurb_msg)
 
     return {
         "era": era,
-        "era_label": entry["era_label"],
-        "slang": entry["slang"],
-        "dialect_notes": entry["dialect_notes"],
+        "era_label": era_label,
+        "slang": slang[:5],
+        "dialect_notes": dialect_notes,
         "ai_blurb": ai_blurb,
     }
 
