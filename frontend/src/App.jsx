@@ -161,7 +161,21 @@ export default function App() {
 
     try {
       // Single call to the Conductor → fans out to all 3 agents in parallel
-      const result = await fetchConductorOrchestrate({ landmarkId: id, era });
+      // Pass feature properties as featureData so the Conductor can handle
+      // uploaded-book landmarks that aren't in the curated knowledge base
+      const result = await fetchConductorOrchestrate({
+        landmarkId: id,
+        era,
+        featureData: {
+          book: properties.book,
+          quote: properties.quote,
+          historical_context: properties.historical_context,
+          year: properties.year,
+          era: properties.era,
+          title: properties.title,
+          mood: properties.mood,
+        },
+      });
       setConductorResult(result);
       setPopupContent({
         geometry,
@@ -385,55 +399,10 @@ export default function App() {
             </p>
             <BookSearch
               onBookSelect={handleBookSelect}
+              onLocationsExtracted={setUploadedBookLocations}
+              onLocationClick={handleMarkerClick}
               accentColor={eraColor}
             />
-            {selectedBook && (
-              <div
-                style={{
-                  background:
-                    "linear-gradient(135deg, #0a2a1a 0%, #0d0f1a 100%)",
-                  borderRadius: "8px",
-                  padding: "12px",
-                  border: "1px solid #1a3d2a",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    marginBottom: "6px",
-                  }}
-                >
-                  <span style={{ fontSize: "14px" }}>📚</span>
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      color: "#4ecdc4",
-                      fontWeight: 700,
-                    }}
-                  >
-                    Selected Book
-                  </span>
-                </div>
-                <p
-                  style={{
-                    margin: "0 0 2px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: "#eee",
-                  }}
-                >
-                  {selectedBook.title}
-                </p>
-                <p style={{ margin: 0, fontSize: "11px", color: "#999" }}>
-                  {selectedBook.authors?.join(", ") || "Unknown author"}
-                  {selectedBook.first_publish_year
-                    ? ` · ${selectedBook.first_publish_year}`
-                    : ""}
-                </p>
-              </div>
-            )}
           </div>
 
           {/* PDF Book Upload */}
