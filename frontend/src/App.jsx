@@ -135,7 +135,8 @@ export default function App() {
 
   // Conductor response (unified: archivist + linguist + stylist + synthesis + timeline)
   const [conductorResult, setConductorResult] = useState(null);
-  const [selectedBook, setSelectedBook] = useState(null);  const [uploadedBookLocations, setUploadedBookLocations] = useState(null);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [uploadedBookLocations, setUploadedBookLocations] = useState(null);
   /* ── Book selection from LibrarianAgent search ──────────────── */
   const handleBookSelect = useCallback((book) => {
     setSelectedBook(book);
