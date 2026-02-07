@@ -1,10 +1,12 @@
-# 🗺️ Living Literary Map
+# 🗺️ Odyssey
 
 **An AI-powered interactive map that extracts and visualizes geographic locations from books using the Model Context Protocol.**
 
 Upload any PDF book or search by title, and watch as AI extracts significant locations mentioned in the text, ranking them by narrative importance and displaying them on an interactive map. Perfect for literary analysis, travel planning based on books, or exploring the geography of your favorite stories.
 
 > Built for TartanHacks 2026 · Powered by [Dedalus Labs](https://dedaluslabs.ai) AI & [Mapbox](https://mapbox.com)
+>
+> **🌐 Live Demo:** [https://odyssey-wp6e.onrender.com/](https://odyssey-wp6e.onrender.com/)
 
 ---
 
@@ -67,7 +69,7 @@ Built on the **Model Context Protocol**, the backend uses modular specialist age
 
 ### Architecture Overview
 
-The Living Literary Map uses the **Model Context Protocol** to coordinate multiple AI agents working together. Instead of a single monolithic prompt, specialized agents handle specific tasks and coordinate through a central conductor.
+Odyssey uses the **Model Context Protocol** to coordinate multiple AI agents working together. Instead of a single monolithic prompt, specialized agents handle specific tasks and coordinate through a central conductor.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -163,7 +165,26 @@ The Living Literary Map uses the **Model Context Protocol** to coordinate multip
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### Option 1: Use the Deployed App (Recommended)
+
+**🌐 Live Demo:** [https://odyssey-wp6e.onrender.com/](https://odyssey-wp6e.onrender.com/)
+
+Just click the link and start exploring! No installation required.
+
+**Try it out:**
+
+1. 📖 Search for a book like "The Great Gatsby" or "On the Road"
+2. 📄 Upload your own PDF book (text-based, not scanned images)
+3. 🗺️ Click markers to see location details and MCP orchestration
+4. 🎨 Use filters to explore by era or year range
+
+---
+
+### Option 2: Run Locally
+
+If you want to run Odyssey on your own machine or contribute to development:
+
+#### Prerequisites
 
 - Python 3.11+
 - Node.js 18+
@@ -171,18 +192,18 @@ The Living Literary Map uses the **Model Context Protocol** to coordinate multip
 - Mapbox access token ([get one here](https://mapbox.com))
 - Google Maps API key (optional, for Street View)
 
-### Installation & Setup
+#### Installation & Setup
 
-#### 1. Clone the repository
+**1. Clone the repository**
 
 ```bash
 git clone <your-repo-url>
-cd living-literary-map
+cd odyssey
 ```
 
-#### 2. Set up environment variables
+**2. Set up environment variables**
 
-Create `.env` file in the root directory:
+Create a `.env` file in the root directory:
 
 ```env
 # Dedalus Labs API key (required for AI location extraction)
@@ -198,7 +219,7 @@ VITE_MCP_BASE_URL=http://localhost:8000
 VITE_GOOGLE_API_KEY=your-key-here
 ```
 
-#### 3. Start the backend (Django MCP Server)
+**3. Start the backend (Django MCP Server)**
 
 ```bash
 # Navigate to backend
@@ -217,7 +238,7 @@ python manage.py runserver 0.0.0.0:8000
 
 Backend will be running at `http://localhost:8000`
 
-#### 4. Start the frontend (React + Vite)
+**4. Start the frontend (React + Vite)**
 
 Open a new terminal:
 
@@ -234,15 +255,9 @@ npm run dev
 
 Frontend will be running at `http://localhost:3000`
 
-#### 5. Open in your browser
+**5. Open in your browser**
 
 Navigate to `http://localhost:3000` and start exploring!
-
-### Quick Test
-
-1. **Search for a book**: Try searching "The Great Gatsby" or "On the Road"
-2. **Upload a PDF**: Upload any book PDF (text-based, not scanned images)
-3. **Explore the map**: Click markers to see details, use filters to explore by era
 
 ---
 
@@ -347,7 +362,7 @@ If a book has 6 locations with relevance scores: `[9, 8, 7, 5, 4, 2]`
 ## 📁 Project Structure
 
 ```
-living-literary-map/
+odyssey/
 ├── frontend/                      # React + Vite frontend
 │   ├── src/
 │   │   ├── components/
