@@ -12,11 +12,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "hackathon-insecure-dev-key-change-me")
 
-DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
+# Force DEBUG=True temporarily to see errors on Render
+DEBUG = True
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
-if "RENDER_EXTERNAL_HOSTNAME" in os.environ:
-    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
+ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
