@@ -89,8 +89,8 @@ def search(request):
 
     limit = body.get("limit", 10)
     
-    # Validate limit is an integer
-    if not isinstance(limit, int):
+    # Validate limit is an integer (but not a boolean)
+    if not isinstance(limit, int) or isinstance(limit, bool):
         return JsonResponse(
             {"error": "limit must be an integer"}, 
             status=400
