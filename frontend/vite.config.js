@@ -12,6 +12,10 @@ export default defineConfig({
         target: "http://localhost:8000",
         changeOrigin: true,
       },
+      "/orchestrate": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
       "/upload-book": {
         target: "http://localhost:8000",
         changeOrigin: true,

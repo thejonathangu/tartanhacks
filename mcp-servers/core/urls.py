@@ -1,5 +1,5 @@
 """
-Root URL configuration — wires up the Conductor and all three MCP agent apps.
+Root URL configuration — wires up the Conductor and all MCP agent apps + PDF upload.
 """
 
 from django.urls import path, include
@@ -14,6 +14,7 @@ urlpatterns = [
     path("search", vibe_search, name="vibe-search"),
     path("upload-book", upload_book, name="upload-book"),
     path("tools/archivist/", include("archivist.urls")),
+    path("tools/librarian/", include("librarian.urls")),
     path("tools/linguist/", include("linguist.urls")),
     path("tools/stylist/", include("stylist.urls")),
 ]

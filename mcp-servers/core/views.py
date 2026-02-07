@@ -15,6 +15,12 @@ def index(request):
         },
         "agents": [
             {
+                "name": "LibrarianAgent",
+                "endpoint": "/tools/librarian/search",
+                "tool": "search_books",
+                "description": "Searches Open Library for books by title and returns closest matches",
+            },
+            {
                 "name": "ArchivistAgent",
                 "endpoint": "/tools/archivist/lookup",
                 "tool": "get_historical_context",

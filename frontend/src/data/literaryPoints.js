@@ -18,7 +18,6 @@ export const literaryGeoJSON = {
           "I wanted my children to have the best combination: American circumstances and Chinese character.",
         historical_context:
           "Post-WWII wave of Chinese immigration through Angel Island and San Francisco.",
-        mood: "hope,longing,displacement,new beginnings",
       },
     },
     {
@@ -33,7 +32,6 @@ export const literaryGeoJSON = {
         quote: "We are not those kind of people—we are better.",
         historical_context:
           "SF Chinatown is the oldest in North America, established in the 1840s during the Gold Rush.",
-        mood: "pride,community,tradition,resilience",
       },
     },
     // ── 1920s — Harlem Renaissance ───────────────────────────────
@@ -49,7 +47,6 @@ export const literaryGeoJSON = {
         quote: "I, too, sing America. I am the darker brother.",
         historical_context:
           "The Cotton Club on 142nd St was the epicenter of the Harlem Renaissance music scene.",
-        mood: "vibrant,music,defiance,joy,nightlife",
       },
     },
     {
@@ -65,7 +62,6 @@ export const literaryGeoJSON = {
           "Life is for the living. Death is for the dead. Let life be like music. And death a note unsaid.",
         historical_context:
           "The Apollo opened to all races in 1934. Its Amateur Night launched Ella Fitzgerald, James Brown, and more.",
-        mood: "performance,energy,ambition,celebration",
       },
     },
     {
@@ -81,7 +77,6 @@ export const literaryGeoJSON = {
           "Hold fast to dreams, for if dreams die, life is a broken-winged bird that cannot fly.",
         historical_context:
           "Langston Hughes and Countee Cullen both attended events at this massive cathedral on the edge of Harlem.",
-        mood: "dreams,melancholy,aspiration,spirituality,quiet reflection",
       },
     },
     // ── 1960s — Civil Rights ─────────────────────────────────────
@@ -98,7 +93,6 @@ export const literaryGeoJSON = {
           "People always say that I didn't give up my seat because I was tired, but that isn't true. I was tired of giving in.",
         historical_context:
           "Rosa Parks' arrest on Dec 1, 1955 sparked the 381-day Montgomery Bus Boycott.",
-        mood: "courage,exhaustion,defiance,dignity",
       },
     },
     {
@@ -113,7 +107,6 @@ export const literaryGeoJSON = {
         quote: "Injustice anywhere is a threat to justice everywhere.",
         historical_context:
           "The 1963 bombing killed four young girls and galvanized national support for the Civil Rights Act.",
-        mood: "tragedy,anger,grief,determination,injustice",
       },
     },
     {
@@ -129,7 +122,6 @@ export const literaryGeoJSON = {
           "I have a dream that my four little children will one day live in a nation where they will not be judged by the color of their skin.",
         historical_context:
           "On August 28, 1963, over 250,000 people gathered for the March on Washington.",
-        mood: "hope,unity,power,inspiration,conviction",
       },
     },
   ],
