@@ -999,7 +999,12 @@ export default function App() {
             </p>
             <BookSearch
               onBookSelect={handleBookSelect}
-              onLocationsExtracted={setUploadedBookLocations}
+              onLocationsExtracted={(geojson) => {
+                // Reset filters so the new dots are visible immediately
+                setYearRange(null);
+                setSelectedEra(null);
+                setUploadedBookLocations(geojson);
+              }}
               onLocationClick={handleMarkerClick}
               accentColor={eraColor}
             />
@@ -1027,7 +1032,11 @@ export default function App() {
             </p>
             <BookUpload
               accentColor={eraColor}
-              onLocationsExtracted={setUploadedBookLocations}
+              onLocationsExtracted={(geojson) => {
+                setYearRange(null);
+                setSelectedEra(null);
+                setUploadedBookLocations(geojson);
+              }}
             />
           </div>
 
