@@ -41,6 +41,8 @@ export default function MapComponent({
   yearRange,
   stylistOverrides,
   uploadedBookLocations,
+  focusLocation, // New prop: { feature, timestamp } to trigger flyTo
+  sidebarOpen, // New prop: to detect sidebar state changes
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -49,6 +51,7 @@ export default function MapComponent({
   const filterEraRef = useRef(filterEra);
   const yearRangeRef = useRef(yearRange);
   const styleLoadedRef = useRef(false);
+  const lastFocusTimestamp = useRef(null);
   const [activeStyle, setActiveStyle] = useState("Satellite");
 
   useEffect(() => {
@@ -60,6 +63,19 @@ export default function MapComponent({
   useEffect(() => {
     yearRangeRef.current = yearRange;
   }, [yearRange]);
+
+  // ── Resize map when sidebar opens/closes ──────────────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Use a small timeout to allow CSS transitions to complete
+    const timer = setTimeout(() => {
+      map.resize();
+    }, 350); // Slightly longer than the 300ms CSS transition
+
+    return () => clearTimeout(timer);
+  }, [sidebarOpen]);
 
   if (MAPBOX_TOKEN) {
     mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -593,6 +609,35 @@ export default function MapComponent({
       .setHTML(html)
       .addTo(mapRef.current);
   }, [popupContent]);
+
+  // ── Focus on location (fly to + trigger popup) ──────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focusLocation) return;
+
+    // Check if this is a new focus request by comparing timestamps
+    if (focusLocation.timestamp === lastFocusTimestamp.current) return;
+    lastFocusTimestamp.current = focusLocation.timestamp;
+
+    const { feature } = focusLocation;
+    if (!feature || !feature.geometry || !feature.geometry.coordinates) return;
+
+    const coords = feature.geometry.coordinates.slice();
+    
+    // Fly to the location with the same animation as marker click
+    map.flyTo({ center: coords, zoom: 14, speed: 1.2, pitch: 45 });
+    
+    // Trigger the marker click handler to show popup and fetch details
+    if (onMarkerClickRef.current) {
+      onMarkerClickRef.current(feature);
+    }
+  }, [focusLocation]);
+
+  // ── Resize map on sidebar toggle ────────────────────────────────
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.resize();
+  }, [sidebarOpen]);
 
   if (!MAPBOX_TOKEN) {
     return (

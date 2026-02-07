@@ -89,8 +89,7 @@ function DelegationTimeline({ timeline, totalMs }) {
               <span style={{ fontSize: "12px" }}>{icon}</span>
               <span style={{ fontSize: "10px", color: "#ccc", flex: 1 }}>
                 {step.agent}
-              </span>
-              <code style={{ fontSize: "9px", color: "#666" }}>
+              </span>              <code style={{ fontSize: "9px", color: "#999" }}>
                 {step.tool}
               </code>
               <span
@@ -148,6 +147,7 @@ export default function App() {
   const [conductorResult, setConductorResult] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
   const [uploadedBookLocations, setUploadedBookLocations] = useState(null);
+  const [focusLocation, setFocusLocation] = useState(null); // { feature, timestamp } to trigger map flyTo
 
   // Debounce ref for slider MCP calls
   const sliderDebounceRef = useRef(null);
@@ -461,7 +461,6 @@ export default function App() {
     setSelectedBook(book);
     console.log("Selected book for processing:", book);
   }, []);
-
   /* ── Marker click → Conductor orchestration ─────────────────── */
   const handleMarkerClick = useCallback(async (feature) => {
     const geometry = feature.geometry
@@ -508,6 +507,13 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  /* ── Location click from sidebar → focus map + trigger orchestration ── */
+  const handleLocationClick = useCallback((feature) => {
+    // Trigger map flyTo animation and popup
+    setFocusLocation({ feature, timestamp: Date.now() });
+    // The marker click handler will be called by the MapComponent effect
   }, []);
 
   /* ── Era filter — year range slider ──────────────────────────── */
@@ -588,8 +594,7 @@ export default function App() {
                 }}
               >
                 Odyssey
-              </h1>
-              <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#666" }}>
+              </h1>              <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#aaa" }}>
                 MCP-Orchestrated · Powered by Dedalus Labs
               </p>
             </div>
@@ -622,11 +627,10 @@ export default function App() {
                 }}
               >
                 {s.icon} {s.val}
-              </div>
-              <div
+              </div>              <div
                 style={{
                   fontSize: "8px",
-                  color: "#555",
+                  color: "#888",
                   textTransform: "uppercase",
                   letterSpacing: "1px",
                 }}
@@ -703,11 +707,10 @@ export default function App() {
               alignItems: "center",
               marginBottom: "8px",
             }}
-          >
-            <p
+          >            <p
               style={{
                 fontSize: "10px",
-                color: "#555",
+                color: "#999",
                 margin: 0,
                 textTransform: "uppercase",
                 letterSpacing: "1.5px",
@@ -719,11 +722,10 @@ export default function App() {
             {yearRange && (
               <button
                 onClick={() => handleYearRangeChange(null)}
-                style={{
-                  background: "none",
+                style={{                  background: "none",
                   border: "1px solid #333",
                   borderRadius: "4px",
-                  color: "#888",
+                  color: "#bbb",
                   fontSize: "9px",
                   padding: "2px 6px",
                   cursor: "pointer",
@@ -744,17 +746,16 @@ export default function App() {
               marginBottom: "6px",
             }}
           >
-            <span
-              style={{
+            <span              style={{
                 fontSize: "20px",
                 fontWeight: 700,
                 fontFamily: "monospace",
-                color: yearRange ? eraColor : "#555",
+                color: yearRange ? eraColor : "#888",
               }}
             >
               {yearRange ? yearRange[0] : globalYearRange[0]}
             </span>
-            <span style={{ fontSize: "10px", color: "#555", padding: "0 8px" }}>
+            <span style={{ fontSize: "10px", color: "#999", padding: "0 8px" }}>
               {yearRange
                 ? `${selectedEra || ""} · ${
                     yearRange[1] - yearRange[0]
@@ -766,7 +767,7 @@ export default function App() {
                 fontSize: "20px",
                 fontWeight: 700,
                 fontFamily: "monospace",
-                color: yearRange ? eraColor : "#555",
+                color: yearRange ? eraColor : "#888",
               }}
             >
               {yearRange ? yearRange[1] : globalYearRange[1]}
@@ -886,9 +887,8 @@ export default function App() {
                 <button
                   key={era}
                   onClick={() => handleYearRangeChange([decade, decade + 9])}
-                  style={{
-                    background: isActive ? `${meta.color}22` : "#141728",
-                    color: isActive ? meta.color : "#666",
+                  style={{                    background: isActive ? `${meta.color}22` : "#141728",
+                    color: isActive ? meta.color : "#999",
                     border: `1px solid ${
                       isActive ? meta.color + "66" : "#1e2235"
                     }`,
@@ -911,11 +911,10 @@ export default function App() {
         {/* Agent Status */}
         <div
           style={{ padding: "10px 20px", borderBottom: "1px solid #1e2235" }}
-        >
-          <p
+        >          <p
             style={{
               fontSize: "10px",
-              color: "#555",
+              color: "#999",
               margin: "0 0 6px",
               textTransform: "uppercase",
               letterSpacing: "1.5px",
@@ -949,8 +948,7 @@ export default function App() {
                   }}
                 >
                   {a.icon}
-                </div>
-                <p style={{ fontSize: "9px", color: "#666", margin: 0 }}>
+                </div>                <p style={{ fontSize: "9px", color: "#999", margin: 0 }}>
                   {a.desc}
                 </p>
               </div>
@@ -967,11 +965,10 @@ export default function App() {
               borderBottom: "1px solid #1e2235",
               paddingBottom: "12px",
             }}
-          >
-            <p
+          >            <p
               style={{
                 fontSize: "10px",
-                color: "#555",
+                color: "#999",
                 margin: "0 0 8px",
                 textTransform: "uppercase",
                 letterSpacing: "1.5px",
@@ -979,8 +976,7 @@ export default function App() {
               }}
             >
               📚 Book Discovery — LibrarianAgent
-            </p>
-            <BookSearch
+            </p>            <BookSearch
               onBookSelect={handleBookSelect}
               onLocationsExtracted={(geojson) => {
                 // Reset filters so the new dots are visible immediately
@@ -988,7 +984,7 @@ export default function App() {
                 setSelectedEra(null);
                 setUploadedBookLocations(geojson);
               }}
-              onLocationClick={handleMarkerClick}
+              onLocationClick={handleLocationClick}
               accentColor={eraColor}
             />
           </div>
@@ -1000,11 +996,10 @@ export default function App() {
               borderBottom: "1px solid #1e2235",
               paddingBottom: "12px",
             }}
-          >
-            <p
+          >            <p
               style={{
                 fontSize: "10px",
-                color: "#555",
+                color: "#999",
                 margin: "0 0 8px",
                 textTransform: "uppercase",
                 letterSpacing: "1.5px",
@@ -1012,15 +1007,14 @@ export default function App() {
               }}
             >
               📄 Upload Book PDF — AI Location Extraction{" "}
-            </p>
-            <BookUpload
+            </p>            <BookUpload
               accentColor={eraColor}
               onLocationsExtracted={(geojson) => {
                 setYearRange(null);
                 setSelectedEra(null);
                 setUploadedBookLocations(geojson);
               }}
-              onLocationClick={handleMarkerClick}
+              onLocationClick={handleLocationClick}
             />
           </div>
 
@@ -1040,23 +1034,21 @@ export default function App() {
               </div>
               <p style={{ fontSize: "13px", margin: "0 0 4px" }}>
                 Conductor delegating tasks...
-              </p>
-              <p style={{ fontSize: "11px", color: "#555" }}>
+              </p>              <p style={{ fontSize: "11px", color: "#999" }}>
                 ArchivistAgent · LinguistAgent · StylistAgent
               </p>
             </div>
           )}
 
-          {/* Empty state */}
-          {!loading && !conductorResult && (
+          {/* Empty state */}          {!loading && !conductorResult && (
             <div
-              style={{ textAlign: "center", padding: "30px 0", color: "#444" }}
+              style={{ textAlign: "center", padding: "30px 0", color: "#999" }}
             >
               <p style={{ fontSize: "40px", margin: "0 0 12px" }}>📍</p>
-              <p style={{ fontSize: "13px", color: "#666", margin: "0 0 6px" }}>
+              <p style={{ fontSize: "13px", color: "#bbb", margin: "0 0 6px" }}>
                 Click a marker on the map
               </p>
-              <p style={{ fontSize: "11px", color: "#444", lineHeight: 1.5 }}>
+              <p style={{ fontSize: "11px", color: "#999", lineHeight: 1.5 }}>
                 Each click triggers the{" "}
                 <strong style={{ color: "#e6b800" }}>ConductorAgent</strong>{" "}
                 which delegates to 3 specialist MCP servers in parallel
@@ -1136,11 +1128,10 @@ export default function App() {
                       }}
                     >
                       ArchivistAgent
-                    </span>
-                    <span
+                    </span>                    <span
                       style={{
                         fontSize: "9px",
-                        color: "#555",
+                        color: "#999",
                         marginLeft: "auto",
                         fontFamily: "monospace",
                       }}
@@ -1263,11 +1254,10 @@ export default function App() {
                       }}
                     >
                       — {linguist.era_label}
-                    </span>
-                    <span
+                    </span>                    <span
                       style={{
                         fontSize: "9px",
-                        color: "#555",
+                        color: "#999",
                         marginLeft: "auto",
                         fontFamily: "monospace",
                       }}
@@ -1373,11 +1363,10 @@ export default function App() {
                       }}
                     >
                       — {stylist.label}
-                    </span>
-                    <span
+                    </span>                    <span
                       style={{
                         fontSize: "9px",
-                        color: "#555",
+                        color: "#999",
                         marginLeft: "auto",
                         fontFamily: "monospace",
                       }}
@@ -1536,11 +1525,10 @@ export default function App() {
                           {msg.role === "user" ? "🧑 " : "🎼 "}
                           {msg.text}
                         </p>
-                        {msg.ms > 0 && (
-                          <span
+                        {msg.ms > 0 && (                          <span
                             style={{
                               fontSize: "9px",
-                              color: "#555",
+                              color: "#999",
                               fontFamily: "monospace",
                             }}
                           >
@@ -1599,13 +1587,12 @@ export default function App() {
           )}
         </div>
 
-        {/* Footer */}
-        <div
+        {/* Footer */}        <div
           style={{
             padding: "10px 20px",
             borderTop: "1px solid #1e2235",
             fontSize: "9px",
-            color: "#333",
+            color: "#888",
             display: "flex",
             justifyContent: "space-between",
           }}
@@ -1637,14 +1624,15 @@ export default function App() {
           }}
         >
           {sidebarOpen ? "◀" : "▶"}
-        </button>
-        <MapComponent
+        </button>        <MapComponent
           onMarkerClick={handleMarkerClick}
           popupContent={popupContent}
           filterEra={selectedEra}
           yearRange={yearRange}
           stylistOverrides={stylist}
           uploadedBookLocations={uploadedBookLocations}
+          focusLocation={focusLocation}
+          sidebarOpen={sidebarOpen}
         />
       </div>
 
