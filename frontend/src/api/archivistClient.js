@@ -68,3 +68,25 @@ export async function fetchVibeSearch(query) {
   if (!res.ok) throw new Error(`VibeSearch error: ${res.status}`);
   return res.json();
 }
+
+// ─── Book PDF Upload Endpoint ───────────────────────────────────────
+
+/**
+ * Upload a book PDF and extract geographic locations via AI.
+ * Returns a GeoJSON FeatureCollection with the extracted points.
+ */
+export async function uploadBookPDF(file, title = "") {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (title) formData.append("title", title);
+
+  const res = await fetch(`${MCP_BASE_URL}/upload-book`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Upload error: ${res.status}`);
+  }
+  return res.json();
+}

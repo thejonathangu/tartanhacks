@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import MapComponent from "./components/MapComponent";
+import BookUpload from "./components/BookUpload";
 import { fetchConductorOrchestrate, fetchVibeSearch } from "./api/archivistClient";
 import { literaryGeoJSON } from "./data/literaryPoints";
 
@@ -380,6 +381,14 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [conductorResult, setConductorResult] = useState(null);
   const [flyToLandmark, setFlyToLandmark] = useState(null);
+  const [uploadedGeoJSON, setUploadedGeoJSON] = useState(null);
+  const [uploadedBookTitle, setUploadedBookTitle] = useState(null);
+
+  /* ── Book PDF upload → add locations to map ─────────────────── */
+  const handleLocationsExtracted = useCallback((geojson, bookTitle) => {
+    setUploadedGeoJSON(geojson);
+    setUploadedBookTitle(bookTitle);
+  }, []);
 
   /* ── Marker click → Conductor orchestration ─────────────────── */
   const handleMarkerClick = useCallback(async (feature) => {
@@ -482,6 +491,9 @@ export default function App() {
 
         {/* Vibe Search */}
         <VibeSearch onResultClick={handleVibeResultClick} />
+
+        {/* Book PDF Upload */}
+        <BookUpload onLocationsExtracted={handleLocationsExtracted} />
 
         {/* Era Filter */}
         <div style={{ padding: "12px 20px", borderBottom: "1px solid #1e2235" }}>
@@ -758,7 +770,7 @@ export default function App() {
       </div>
 
       {/* ── Map ───────────────────────────────────────────────── */}
-      <div style={{ flex: 1, position: "relative" }}>
+      <div style={{ flex: 1, position: "relative", overflow: "hidden", minWidth: 0 }}>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{
@@ -779,6 +791,7 @@ export default function App() {
           filterEra={selectedEra}
           stylistOverrides={stylist}
           flyToLandmark={flyToLandmark}
+          uploadedGeoJSON={uploadedGeoJSON}
         />
       </div>
 
