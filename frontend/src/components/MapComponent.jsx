@@ -136,7 +136,6 @@ export default function MapComponent({
           "circle-stroke-width": 0,
         },
       });
-
       m.addLayer({
         id: "literary-markers",
         type: "circle",
@@ -156,6 +155,19 @@ export default function MapComponent({
           ],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
+        },
+      }); // ── Relevance number labels on markers ──
+      m.addLayer({
+        id: "literary-relevance",
+        type: "symbol",
+        source: "literary-points",
+        layout: {
+          "text-field": ["to-string", ["get", "rank"]], // Display rank (1-N) instead of relevance score
+          "text-size": 11,
+          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        },
+        paint: {
+          "text-color": "#ffffff",
         },
       });
 
@@ -212,19 +224,34 @@ export default function MapComponent({
       [
         "literary-markers",
         "literary-glow",
+        "literary-relevance",
         "literary-labels",
         "route-lines",
       ].forEach((id) => {
         if (map.getLayer(id)) map.setFilter(id, filter);
       });
+      // Also filter uploaded layers
+      ["uploaded-markers", "uploaded-relevance", "uploaded-labels"].forEach(
+        (id) => {
+          if (map.getLayer(id)) map.setFilter(id, filter);
+        }
+      );
     });
 
     mapRef.current = map;
-    return () => map.remove();
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      isFirstStyleRender.current = true;
+    };
   }, []);
-
-  // ── Style switching ──
+  // ── Style switching (skip first render — constructor already set the style) ──
+  const isFirstStyleRender = useRef(true);
   useEffect(() => {
+    if (isFirstStyleRender.current) {
+      isFirstStyleRender.current = false;
+      return;
+    }
     if (!mapRef.current) return;
     styleLoadedRef.current = false;
     mapRef.current.setStyle(MAP_STYLES[activeStyle]);
@@ -254,12 +281,12 @@ export default function MapComponent({
       "route-lines",
     ].forEach((id) => {
       if (map.getLayer(id)) map.setFilter(id, filter);
-    });
-
-    // Apply to uploaded layers too
-    ["uploaded-markers", "uploaded-labels"].forEach((id) => {
-      if (map.getLayer(id)) map.setFilter(id, filter);
-    });
+    }); // Apply to uploaded layers too
+    ["uploaded-markers", "uploaded-relevance", "uploaded-labels"].forEach(
+      (id) => {
+        if (map.getLayer(id)) map.setFilter(id, filter);
+      }
+    );
 
     // Fly to filtered features bounding box
     if (yearRange || filterEra) {
@@ -387,12 +414,14 @@ export default function MapComponent({
     function doAdd() {
       if (cancelled) return;
       const data = uploadedLocRef.current;
-      if (!data) return;
-
-      // Remove old layers/source if they exist
+      if (!data) return; // Remove old layers/source if they exist
       try {
         if (map.getLayer("uploaded-markers"))
           map.removeLayer("uploaded-markers");
+      } catch (_) {}
+      try {
+        if (map.getLayer("uploaded-relevance"))
+          map.removeLayer("uploaded-relevance");
       } catch (_) {}
       try {
         if (map.getLayer("uploaded-labels")) map.removeLayer("uploaded-labels");
@@ -403,7 +432,6 @@ export default function MapComponent({
       } catch (_) {}
 
       map.addSource("uploaded-points", { type: "geojson", data });
-
       map.addLayer({
         id: "uploaded-markers",
         type: "circle",
@@ -414,6 +442,19 @@ export default function MapComponent({
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
           "circle-opacity": 0.9,
+        },
+      }); // ── Relevance number labels on uploaded markers ──
+      map.addLayer({
+        id: "uploaded-relevance",
+        type: "symbol",
+        source: "uploaded-points",
+        layout: {
+          "text-field": ["to-string", ["get", "rank"]], // Display rank (1-N) instead of relevance score
+          "text-size": 11,
+          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        },
+        paint: {
+          "text-color": "#ffffff",
         },
       });
 
@@ -508,8 +549,8 @@ export default function MapComponent({
       properties.era === "1940s"
         ? "#e6b800"
         : properties.era === "1920s"
-          ? "#ff6b6b"
-          : "#4ecdc4";
+        ? "#ff6b6b"
+        : "#4ecdc4";
 
     const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lng}&fov=90&heading=235&pitch=10&key=${GOOGLE_API_KEY}`;
 
@@ -525,7 +566,9 @@ export default function MapComponent({
           </div>
         </div>
         <h3 style="margin:0 0 4px;font-size:14px;">${properties.title}</h3>
-        <p style="color:#888;margin:0 0 8px;font-size:11px;">${properties.book} · ${properties.year}</p>
+        <p style="color:#888;margin:0 0 8px;font-size:11px;">${
+          properties.book
+        } · ${properties.year}</p>
         <blockquote style="border-left:3px solid ${accentColor};padding-left:8px;margin:0 0 8px;
           font-style:italic;font-size:12px;color:#444;line-height:1.5;">
           "${properties.quote}"

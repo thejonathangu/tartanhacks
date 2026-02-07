@@ -85,7 +85,7 @@ export default function BookSearch({
       const data = await fetchLocationsFromTitle(
         book.title,
         book.authors?.join(", ") || "",
-        book.first_publish_year ? String(book.first_publish_year) : "",
+        book.first_publish_year ? String(book.first_publish_year) : ""
       );
       if (data.geojson && data.geojson.features.length > 0) {
         if (onLocationsExtracted) onLocationsExtracted(data.geojson);
@@ -120,6 +120,12 @@ export default function BookSearch({
   /* ── Mapped View — after successful extraction ─────────────── */
   if (mappedBook && extractedLocations) {
     const features = extractedLocations.features || [];
+    // Sort locations by rank (1 = most important, N = least important)
+    const sortedFeatures = [...features].sort((a, b) => {
+      const rankA = a.properties.rank || 999;
+      const rankB = b.properties.rank || 999;
+      return rankA - rankB;
+    });
     return (
       <div style={{ marginBottom: "14px" }}>
         {/* Back button */}
@@ -223,8 +229,8 @@ export default function BookSearch({
             fontWeight: 600,
           }}
         >
-          📍 {features.length} location{features.length !== 1 ? "s" : ""}{" "}
-          extracted
+          📍 {sortedFeatures.length} location
+          {sortedFeatures.length !== 1 ? "s" : ""} extracted
         </p>
 
         {/* Locations list */}
@@ -237,7 +243,7 @@ export default function BookSearch({
             overflowY: "auto",
           }}
         >
-          {features.map((feature) => {
+          {sortedFeatures.map((feature) => {
             const p = feature.properties;
             const isActive = activeLocationId === p.id;
             return (
@@ -261,13 +267,21 @@ export default function BookSearch({
               >
                 <span
                   style={{
-                    fontSize: "18px",
+                    fontSize: "14px",
+                    fontWeight: 700,
                     flexShrink: 0,
                     marginTop: "2px",
-                    filter: isActive ? "none" : "grayscale(0.5)",
+                    minWidth: "24px",
+                    height: "24px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: isActive ? accentColor : `${accentColor}33`,
+                    color: isActive ? "#000" : "#fff",
+                    borderRadius: "6px",
                   }}
                 >
-                  📍
+                  {p.rank || "?"}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p

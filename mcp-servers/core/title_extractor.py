@@ -31,6 +31,11 @@ For each location, provide:
    - The key question is: WHEN does the protagonist walk through this place?
    - If a book has dual timelines (e.g., historical flashbacks + present day), use the timeline that has the most narrative weight at that location
    - Different locations CAN have different years if the story's timeline shifts
+7. A relevance score (1-10) indicating narrative importance:
+   - 10 = Central to the plot, major scene, protagonist's home/journey destination
+   - 7-9 = Significant location, important events occur here
+   - 4-6 = Supporting location, appears multiple times or has narrative weight
+   - 1-3 = Minor mention, background detail, passing reference
 
 Return your response as a JSON array with this exact structure:
 [
@@ -43,14 +48,17 @@ Return your response as a JSON array with this exact structure:
     "coordinates": [longitude, latitude],
     "quote": "A memorable quote or reference from the book about this place...",
     "historical_context": "Why this place matters in the book's context...",
-    "mood": "comma,separated,mood,words"
+    "mood": "comma,separated,mood,words",
+    "relevance": 9
   }
 ]
 
 Rules:
 - Only include REAL places with accurate coordinates
 - Extract 3-10 locations maximum
-- Prefer the most iconic/memorable locations from the book
+- Prefer the most iconic/memorable locations from the book (relevance 6+)
+- Assign relevance scores based on narrative importance in the actual story
+- The climactic or most important location should get 10
 - Use your knowledge of the book's content to provide accurate quotes or close paraphrases
 - The "year" field should reflect WHEN the story's characters experience that location, not the publication date and not some historical figure merely referenced in the plot
 - If you don't recognize the book, still try to identify locations if possible from the title
