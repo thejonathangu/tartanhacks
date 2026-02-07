@@ -10,7 +10,7 @@ import fitz  # PyMuPDF
 from core.dedalus_client import dedalus_chat
 
 
-def extract_text_from_pdf(pdf_bytes: bytes, max_pages: int = 200) -> str:
+def extract_text_from_pdf(pdf_bytes: bytes, max_pages: int = 100) -> str:
     """Extract plain text from PDF bytes, capped at max_pages."""
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     pages = min(len(doc), max_pages)    # determines number of pages to extract

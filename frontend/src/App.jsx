@@ -148,6 +148,7 @@ export default function App() {
   const [conductorResult, setConductorResult] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
   const [uploadedBookLocations, setUploadedBookLocations] = useState(null);
+  const [focusLocation, setFocusLocation] = useState(null); // { feature, timestamp } to trigger map flyTo
 
   // Debounce ref for slider MCP calls
   const sliderDebounceRef = useRef(null);
@@ -461,7 +462,6 @@ export default function App() {
     setSelectedBook(book);
     console.log("Selected book for processing:", book);
   }, []);
-
   /* ── Marker click → Conductor orchestration ─────────────────── */
   const handleMarkerClick = useCallback(async (feature) => {
     const geometry = feature.geometry
@@ -508,6 +508,13 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  /* ── Location click from sidebar → focus map + trigger orchestration ── */
+  const handleLocationClick = useCallback((feature) => {
+    // Trigger map flyTo animation and popup
+    setFocusLocation({ feature, timestamp: Date.now() });
+    // The marker click handler will be called by the MapComponent effect
   }, []);
 
   /* ── Era filter — year range slider ──────────────────────────── */
@@ -979,8 +986,7 @@ export default function App() {
               }}
             >
               📚 Book Discovery — LibrarianAgent
-            </p>
-            <BookSearch
+            </p>            <BookSearch
               onBookSelect={handleBookSelect}
               onLocationsExtracted={(geojson) => {
                 // Reset filters so the new dots are visible immediately
@@ -988,7 +994,7 @@ export default function App() {
                 setSelectedEra(null);
                 setUploadedBookLocations(geojson);
               }}
-              onLocationClick={handleMarkerClick}
+              onLocationClick={handleLocationClick}
               accentColor={eraColor}
             />
           </div>
@@ -1012,15 +1018,14 @@ export default function App() {
               }}
             >
               📄 Upload Book PDF — AI Location Extraction{" "}
-            </p>
-            <BookUpload
+            </p>            <BookUpload
               accentColor={eraColor}
               onLocationsExtracted={(geojson) => {
                 setYearRange(null);
                 setSelectedEra(null);
                 setUploadedBookLocations(geojson);
               }}
-              onLocationClick={handleMarkerClick}
+              onLocationClick={handleLocationClick}
             />
           </div>
 
@@ -1637,14 +1642,15 @@ export default function App() {
           }}
         >
           {sidebarOpen ? "◀" : "▶"}
-        </button>
-        <MapComponent
+        </button>        <MapComponent
           onMarkerClick={handleMarkerClick}
           popupContent={popupContent}
           filterEra={selectedEra}
           yearRange={yearRange}
           stylistOverrides={stylist}
           uploadedBookLocations={uploadedBookLocations}
+          focusLocation={focusLocation}
+          sidebarOpen={sidebarOpen}
         />
       </div>
 
