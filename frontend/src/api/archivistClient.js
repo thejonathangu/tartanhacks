@@ -52,3 +52,19 @@ export async function fetchConductorOrchestrate({ landmarkId, era }) {
   if (!res.ok) throw new Error(`ConductorAgent error: ${res.status}`);
   return res.json();
 }
+
+// ─── Vibe Search Endpoint (semantic / feeling-based search) ─────────
+
+/**
+ * Semantic "Vibe Search" — search by feelings, not addresses.
+ * e.g. "Show me somewhere that feels like a lonely rainy Sunday"
+ */
+export async function fetchVibeSearch(query) {
+  const res = await fetch(`${MCP_BASE_URL}/search`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) throw new Error(`VibeSearch error: ${res.status}`);
+  return res.json();
+}
