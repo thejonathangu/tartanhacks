@@ -1,8 +1,17 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from "react";
 import MapComponent from "./components/MapComponent";
 import BookSearch from "./components/BookSearch";
 import BookUpload from "./components/BookUpload";
-import { fetchConductorOrchestrate } from "./api/archivistClient";
+import {
+  fetchConductorOrchestrate,
+  fetchChatAboutPlace,
+} from "./api/archivistClient";
 import { literaryGeoJSON } from "./data/literaryPoints";
 
 /* ── Era metadata ──────────────────────────────────────────────── */
@@ -143,6 +152,24 @@ export default function App() {
   // Debounce ref for slider MCP calls
   const sliderDebounceRef = useRef(null);
 
+  // Chat state
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
+
+  // Story Mode state
+  const [storyPlaying, setStoryPlaying] = useState(false);
+  const [storyIndex, setStoryIndex] = useState(-1);
+  const storyTimerRef = useRef(null);
+  const storyActiveRef = useRef(false); // tracks whether story mode is running (avoids stale closure)
+
+  // Narration state
+  const [narrationEnabled, setNarrationEnabled] = useState(false);
+  const synthRef = useRef(null);
+
+  // Heatmap toggle
+  const [heatmapOn, setHeatmapOn] = useState(false);
+
   /* ── Compute global year range from curated + uploaded data ── */
   const globalYearRange = useMemo(() => {
     const years = [];
@@ -181,6 +208,257 @@ export default function App() {
 
   /* ── Helper: year → era string (e.g. 1925 → "1920s") ───────── */
   const yearToEra = (year) => `${Math.floor(year / 10) * 10}s`;
+
+  /* ── Stats computed from all data ───────────────────────────── */
+  const stats = useMemo(() => {
+    const curatedFeats = literaryGeoJSON.features || [];
+    const uploadedFeats = uploadedBookLocations?.features || [];
+    const all = [...curatedFeats, ...uploadedFeats];
+    const books = new Set();
+    const eras = new Set();
+    const countries = new Set();
+    all.forEach((f) => {
+      if (f.properties?.book) books.add(f.properties.book);
+      if (f.properties?.era) eras.add(f.properties.era);
+      // rough country from coords
+      const [lng] = f.geometry?.coordinates || [];
+      if (lng != null) {
+        if (lng > -130 && lng < -60) countries.add("USA");
+        else if (lng > -10 && lng < 40) countries.add("Europe");
+        else if (lng > 40 && lng < 80) countries.add("Asia");
+        else if (lng > 100 && lng < 160) countries.add("Asia-Pacific");
+        else countries.add("Other");
+      }
+    });
+    return {
+      books: books.size,
+      locations: all.length,
+      eras: eras.size,
+      regions: countries.size,
+    };
+  }, [uploadedBookLocations]);
+
+  /* ── All features for story mode ────────────────────────────── */
+  const allFeatures = useMemo(() => {
+    const curatedFeats = literaryGeoJSON.features || [];
+    const uploadedFeats = uploadedBookLocations?.features || [];
+    return [...curatedFeats, ...uploadedFeats];
+  }, [uploadedBookLocations]);
+
+  /* ── Narration helper (SpeechSynthesis) ─────────────────────── */
+  const speak = useCallback(
+    (text) => {
+      if (!narrationEnabled || !window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 0.95;
+      utter.pitch = 1.0;
+      utter.volume = 1.0;
+      // Pick a pleasant voice
+      const voices = window.speechSynthesis.getVoices();
+      const preferred =
+        voices.find((v) => v.lang === "en-US" && v.name.includes("Google")) ||
+        voices.find((v) => v.lang === "en-US") ||
+        voices[0];
+      if (preferred) utter.voice = preferred;
+      synthRef.current = utter;
+      window.speechSynthesis.speak(utter);
+    },
+    [narrationEnabled],
+  );
+
+  /* ── Story Mode — auto-fly through locations ────────────────── */
+  const startStoryMode = useCallback(() => {
+    if (allFeatures.length === 0) return;
+    storyActiveRef.current = true;
+    setStoryPlaying(true);
+    setStoryIndex(0);
+  }, [allFeatures]);
+
+  const stopStoryMode = useCallback(() => {
+    storyActiveRef.current = false;
+    setStoryPlaying(false);
+    setStoryIndex(-1);
+    if (storyTimerRef.current) clearTimeout(storyTimerRef.current);
+    window.speechSynthesis?.cancel();
+  }, []);
+
+  // Story mode: process one location fully before moving to the next.
+  // 1. Fly to the location + call MCP orchestration (handleMarkerClick)
+  // 2. Wait for the MCP result to come back
+  // 3. Narrate the FULL synthesis (from the Conductor) + feature details
+  // 4. Wait for narration to finish, then pause briefly, then advance
+  useEffect(() => {
+    if (!storyPlaying || storyIndex < 0) return;
+    if (storyIndex >= allFeatures.length) {
+      stopStoryMode();
+      return;
+    }
+
+    let cancelled = false;
+    const feature = allFeatures[storyIndex];
+
+    (async () => {
+      // Step 1: fly to location & orchestrate — reuse handleMarkerClick logic
+      // but inline it so we can await the result
+      const geometry = feature.geometry
+        ? {
+            type: feature.geometry.type,
+            coordinates: feature.geometry.coordinates.slice(),
+          }
+        : null;
+      const properties = { ...feature.properties };
+      const { id, era } = properties;
+
+      setSelectedEra(era);
+      setLoading(true);
+      setConductorResult(null);
+      setSidebarOpen(true);
+
+      let result = null;
+      try {
+        result = await fetchConductorOrchestrate({
+          landmarkId: id,
+          era,
+          featureData: {
+            book: properties.book,
+            quote: properties.quote,
+            historical_context: properties.historical_context,
+            year: properties.year,
+            era: properties.era,
+            title: properties.title,
+            mood: properties.mood,
+          },
+        });
+        if (cancelled) return;
+        setConductorResult(result);
+        setPopupContent({
+          geometry,
+          properties,
+          deepContext: result?.archivist || null,
+        });
+      } catch (err) {
+        console.error("Story mode orchestration failed:", err);
+        if (cancelled) return;
+        setPopupContent({ geometry, properties, deepContext: null });
+        setConductorResult(null);
+      } finally {
+        setLoading(false);
+      }
+
+      if (cancelled) return;
+
+      // Step 2: Build the full narration — prefer the MCP synthesis, then
+      // fall back to assembled feature properties
+      const p = properties;
+      const parts = [];
+      if (p.title) parts.push(p.title + ".");
+      if (p.book) parts.push(`From the book ${p.book}.`);
+      if (p.era) parts.push(`Set in the ${p.era}.`);
+      // Use the MCP conductor synthesis if available — it's richer
+      if (result?.synthesis) {
+        parts.push(result.synthesis);
+      } else {
+        if (p.quote) parts.push(`Quote: "${p.quote}"`);
+        if (p.historical_context) parts.push(p.historical_context);
+      }
+      if (p.mood) parts.push(`The mood here is ${p.mood.replace(/,/g, ", ")}.`);
+      const narration = parts.join(" ");
+
+      // Step 3: Speak and wait for completion
+      if (narrationEnabled && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        await new Promise((resolve) => {
+          const utter = new SpeechSynthesisUtterance(narration);
+          utter.rate = 0.95;
+          utter.pitch = 1.0;
+          const voices = window.speechSynthesis.getVoices();
+          const preferred =
+            voices.find(
+              (v) => v.lang === "en-US" && v.name.includes("Google"),
+            ) ||
+            voices.find((v) => v.lang === "en-US") ||
+            voices[0];
+          if (preferred) utter.voice = preferred;
+          utter.onend = resolve;
+          utter.onerror = resolve; // still advance on error
+          window.speechSynthesis.speak(utter);
+        });
+      } else {
+        // No narration — just pause 8s so the user can read the sidebar
+        await new Promise((r) => {
+          storyTimerRef.current = setTimeout(r, 8000);
+        });
+      }
+
+      if (cancelled) return;
+
+      // Step 4: Brief pause, then advance to the next location
+      await new Promise((r) => {
+        storyTimerRef.current = setTimeout(r, 2000);
+      });
+
+      if (cancelled || !storyActiveRef.current) return;
+      setStoryIndex((prev) => prev + 1);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (storyTimerRef.current) clearTimeout(storyTimerRef.current);
+      window.speechSynthesis?.cancel();
+    };
+  }, [storyPlaying, storyIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Narrate synthesis when it arrives (non-story-mode only) ── */
+  const archivist = conductorResult?.archivist;
+  const linguist = conductorResult?.linguist;
+  const stylist = conductorResult?.stylist;
+  const synthesis = conductorResult?.synthesis;
+  const timeline = conductorResult?.timeline;
+  const totalMs = conductorResult?.total_ms;
+
+  useEffect(() => {
+    // In story mode, narration is handled by the story effect — skip here
+    if (storyPlaying) return;
+    if (synthesis && narrationEnabled) {
+      speak(synthesis);
+    }
+  }, [synthesis]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Chat handler ───────────────────────────────────────────── */
+  const handleChatSend = useCallback(async () => {
+    if (!chatInput.trim()) return;
+    const question = chatInput.trim();
+    setChatInput("");
+    setChatMessages((prev) => [...prev, { role: "user", text: question }]);
+    setChatLoading(true);
+    try {
+      const context = {};
+      if (popupContent?.properties) {
+        Object.assign(context, popupContent.properties);
+      }
+      if (archivist) {
+        context.historical_context = archivist.historical_context;
+        context.book = archivist.book;
+      }
+      const data = await fetchChatAboutPlace(question, context);
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: data.answer, ms: data.elapsed_ms },
+      ]);
+    } catch (err) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: "Sorry, I couldn't answer that right now.",
+          ms: 0,
+        },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  }, [chatInput, popupContent, archivist]);
   /* ── Book selection from LibrarianAgent search ──────────────── */
   const handleBookSelect = useCallback((book) => {
     setSelectedBook(book);
@@ -267,12 +545,6 @@ export default function App() {
   const eraColor = selectedEra
     ? ERA_META[selectedEra]?.color || "#b388ff"
     : "#4ecdc4";
-  const archivist = conductorResult?.archivist;
-  const linguist = conductorResult?.linguist;
-  const stylist = conductorResult?.stylist;
-  const synthesis = conductorResult?.synthesis;
-  const timeline = conductorResult?.timeline;
-  const totalMs = conductorResult?.total_ms;
 
   return (
     <div
@@ -325,6 +597,120 @@ export default function App() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* ── Stats Dashboard ──────────────────────────────────── */}
+        <div
+          style={{
+            padding: "10px 20px",
+            borderBottom: "1px solid #1e2235",
+            display: "flex",
+            gap: "10px",
+            justifyContent: "space-between",
+          }}
+        >
+          {[
+            { icon: "📚", val: stats.books, label: "books" },
+            { icon: "📍", val: stats.locations, label: "places" },
+            { icon: "🕰️", val: stats.eras, label: "eras" },
+            { icon: "🌍", val: stats.regions, label: "regions" },
+          ].map((s) => (
+            <div key={s.label} style={{ textAlign: "center", flex: 1 }}>
+              <div
+                style={{
+                  fontSize: "16px",
+                  fontWeight: 700,
+                  color: eraColor,
+                  fontFamily: "monospace",
+                }}
+              >
+                {s.icon} {s.val}
+              </div>
+              <div
+                style={{
+                  fontSize: "8px",
+                  color: "#555",
+                  textTransform: "uppercase",
+                  letterSpacing: "1px",
+                }}
+              >
+                {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Story Mode + Narration + Heatmap Controls ────────── */}
+        <div
+          style={{
+            padding: "8px 20px",
+            borderBottom: "1px solid #1e2235",
+            display: "flex",
+            gap: "6px",
+            flexWrap: "wrap",
+          }}
+        >
+          {/* Story Mode */}
+          <button
+            onClick={storyPlaying ? stopStoryMode : startStoryMode}
+            disabled={allFeatures.length === 0}
+            style={{
+              background: storyPlaying ? "#ff6b6b22" : "#141728",
+              color: storyPlaying ? "#ff6b6b" : "#aaa",
+              border: `1px solid ${storyPlaying ? "#ff6b6b66" : "#1e2235"}`,
+              borderRadius: "6px",
+              padding: "5px 10px",
+              cursor: "pointer",
+              fontSize: "10px",
+              fontWeight: 600,
+              fontFamily: "system-ui, sans-serif",
+              transition: "all 0.2s",
+              flex: 1,
+            }}
+          >
+            {storyPlaying
+              ? `⏹ Stop (${storyIndex + 1}/${allFeatures.length})`
+              : "▶ Story Mode"}
+          </button>
+          {/* Narration */}
+          <button
+            onClick={() => {
+              setNarrationEnabled(!narrationEnabled);
+              if (narrationEnabled) window.speechSynthesis?.cancel();
+            }}
+            style={{
+              background: narrationEnabled ? "#4ecdc422" : "#141728",
+              color: narrationEnabled ? "#4ecdc4" : "#aaa",
+              border: `1px solid ${narrationEnabled ? "#4ecdc466" : "#1e2235"}`,
+              borderRadius: "6px",
+              padding: "5px 10px",
+              cursor: "pointer",
+              fontSize: "10px",
+              fontWeight: 600,
+              fontFamily: "system-ui, sans-serif",
+              transition: "all 0.2s",
+            }}
+          >
+            {narrationEnabled ? "🔊 On" : "🔇 Narrate"}
+          </button>
+          {/* Heatmap */}
+          <button
+            onClick={() => setHeatmapOn(!heatmapOn)}
+            style={{
+              background: heatmapOn ? "#e6b80022" : "#141728",
+              color: heatmapOn ? "#e6b800" : "#aaa",
+              border: `1px solid ${heatmapOn ? "#e6b80066" : "#1e2235"}`,
+              borderRadius: "6px",
+              padding: "5px 10px",
+              cursor: "pointer",
+              fontSize: "10px",
+              fontWeight: 600,
+              fontFamily: "system-ui, sans-serif",
+              transition: "all 0.2s",
+            }}
+          >
+            {heatmapOn ? "🔥 Heatmap" : "🔥 Heat"}
+          </button>
         </div>
 
         {/* Era Filter — Year Range Slider */}
@@ -613,7 +999,12 @@ export default function App() {
             </p>
             <BookSearch
               onBookSelect={handleBookSelect}
-              onLocationsExtracted={setUploadedBookLocations}
+              onLocationsExtracted={(geojson) => {
+                // Reset filters so the new dots are visible immediately
+                setYearRange(null);
+                setSelectedEra(null);
+                setUploadedBookLocations(geojson);
+              }}
               onLocationClick={handleMarkerClick}
               accentColor={eraColor}
             />
@@ -641,7 +1032,11 @@ export default function App() {
             </p>
             <BookUpload
               accentColor={eraColor}
-              onLocationsExtracted={setUploadedBookLocations}
+              onLocationsExtracted={(geojson) => {
+                setYearRange(null);
+                setSelectedEra(null);
+                setUploadedBookLocations(geojson);
+              }}
             />
           </div>
 
@@ -1098,6 +1493,124 @@ export default function App() {
                   )}
                 </div>
               )}
+
+              {/* ── Ask About This Place — Chat ───────────────── */}
+              <div
+                style={{
+                  background: "#0a0c18",
+                  borderRadius: "8px",
+                  padding: "12px",
+                  marginBottom: "14px",
+                  border: "1px solid #1e2235",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "10px",
+                    color: "#888",
+                    margin: "0 0 8px",
+                    textTransform: "uppercase",
+                    letterSpacing: "1.5px",
+                    fontWeight: 700,
+                  }}
+                >
+                  💬 Ask About This Place
+                </p>
+
+                {/* Chat messages */}
+                {chatMessages.length > 0 && (
+                  <div
+                    style={{
+                      maxHeight: "200px",
+                      overflowY: "auto",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    {chatMessages.map((msg, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          marginBottom: "6px",
+                          padding: "8px 10px",
+                          background:
+                            msg.role === "user" ? "#1a1d2e" : "#141728",
+                          borderRadius: "6px",
+                          borderLeft:
+                            msg.role === "assistant"
+                              ? `3px solid ${eraColor}`
+                              : "none",
+                        }}
+                      >
+                        <p
+                          style={{
+                            fontSize: "11px",
+                            color: msg.role === "user" ? "#aaa" : "#ddd",
+                            margin: 0,
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {msg.role === "user" ? "🧑 " : "🎼 "}
+                          {msg.text}
+                        </p>
+                        {msg.ms > 0 && (
+                          <span
+                            style={{
+                              fontSize: "9px",
+                              color: "#555",
+                              fontFamily: "monospace",
+                            }}
+                          >
+                            {msg.ms}ms
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Chat input */}
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleChatSend()}
+                    placeholder="Ask anything about this place..."
+                    disabled={chatLoading}
+                    style={{
+                      flex: 1,
+                      padding: "8px 10px",
+                      background: "#1a1d2e",
+                      border: `1px solid ${chatInput ? eraColor : "#252840"}`,
+                      borderRadius: "6px",
+                      color: "#eee",
+                      fontSize: "12px",
+                      outline: "none",
+                      fontFamily: "system-ui, sans-serif",
+                      transition: "border-color 0.2s",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <button
+                    onClick={handleChatSend}
+                    disabled={chatLoading || !chatInput.trim()}
+                    style={{
+                      background: eraColor,
+                      color: "#000",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "8px 14px",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      opacity: chatLoading || !chatInput.trim() ? 0.4 : 1,
+                      transition: "opacity 0.2s",
+                    }}
+                  >
+                    {chatLoading ? "⏳" : "→"}
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -1148,6 +1661,7 @@ export default function App() {
           yearRange={yearRange}
           stylistOverrides={stylist}
           uploadedBookLocations={uploadedBookLocations}
+          heatmapOn={heatmapOn}
         />
       </div>
 
