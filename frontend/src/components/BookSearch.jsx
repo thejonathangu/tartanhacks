@@ -1,5 +1,8 @@
 import React, { useState, useCallback, useRef } from "react";
-import { fetchLibrarianSearch, fetchLocationsFromTitle } from "../api/archivistClient";
+import {
+  fetchLibrarianSearch,
+  fetchLocationsFromTitle,
+} from "../api/archivistClient";
 
 /**
  * BookSearch — A search widget that queries the LibrarianAgent
@@ -12,7 +15,12 @@ import { fetchLibrarianSearch, fetchLocationsFromTitle } from "../api/archivistC
  *  - onLocationClick(feature)      — called when a location row is clicked (fly-to + conductor)
  *  - accentColor                   — theme accent (defaults to #4ecdc4)
  */
-export default function BookSearch({ onBookSelect, onLocationsExtracted, onLocationClick, accentColor = "#4ecdc4" }) {
+export default function BookSearch({
+  onBookSelect,
+  onLocationsExtracted,
+  onLocationClick,
+  accentColor = "#4ecdc4",
+}) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -77,7 +85,7 @@ export default function BookSearch({ onBookSelect, onLocationsExtracted, onLocat
       const data = await fetchLocationsFromTitle(
         book.title,
         book.authors?.join(", ") || "",
-        book.first_publish_year ? String(book.first_publish_year) : ""
+        book.first_publish_year ? String(book.first_publish_year) : "",
       );
       if (data.geojson && data.geojson.features.length > 0) {
         if (onLocationsExtracted) onLocationsExtracted(data.geojson);
@@ -160,42 +168,75 @@ export default function BookSearch({ onBookSelect, onLocationsExtracted, onLocat
                 borderRadius: "4px",
                 flexShrink: 0,
               }}
-              onError={(e) => { e.target.style.display = "none"; }}
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
             />
           ) : (
-            <div style={{
-              width: "36px", height: "52px", background: "#0a0c18",
-              borderRadius: "4px", display: "flex", alignItems: "center",
-              justifyContent: "center", fontSize: "18px", flexShrink: 0,
-            }}>📖</div>
+            <div
+              style={{
+                width: "36px",
+                height: "52px",
+                background: "#0a0c18",
+                borderRadius: "4px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                flexShrink: 0,
+              }}
+            >
+              📖
+            </div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{
-              margin: 0, fontSize: "13px", fontWeight: 700, color: accentColor,
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "13px",
+                fontWeight: 700,
+                color: accentColor,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
               {mappedBook.title}
             </p>
             <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#999" }}>
               {mappedBook.authors?.join(", ") || "Unknown author"}
-              {mappedBook.first_publish_year ? ` · ${mappedBook.first_publish_year}` : ""}
+              {mappedBook.first_publish_year
+                ? ` · ${mappedBook.first_publish_year}`
+                : ""}
             </p>
           </div>
         </div>
 
         {/* Locations header */}
-        <p style={{
-          fontSize: "10px", color: "#666", margin: "0 0 8px",
-          textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600,
-        }}>
-          📍 {features.length} location{features.length !== 1 ? "s" : ""} extracted
+        <p
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            margin: "0 0 8px",
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            fontWeight: 600,
+          }}
+        >
+          📍 {features.length} location{features.length !== 1 ? "s" : ""}{" "}
+          extracted
         </p>
 
         {/* Locations list */}
-        <div style={{
-          display: "flex", flexDirection: "column", gap: "6px",
-          maxHeight: "400px", overflowY: "auto",
-        }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+            maxHeight: "400px",
+            overflowY: "auto",
+          }}
+        >
           {features.map((feature) => {
             const p = feature.properties;
             const isActive = activeLocationId === p.id;
@@ -218,58 +259,103 @@ export default function BookSearch({ onBookSelect, onLocationsExtracted, onLocat
                   fontFamily: "system-ui, sans-serif",
                 }}
               >
-                <span style={{
-                  fontSize: "18px", flexShrink: 0, marginTop: "2px",
-                  filter: isActive ? "none" : "grayscale(0.5)",
-                }}>📍</span>
+                <span
+                  style={{
+                    fontSize: "18px",
+                    flexShrink: 0,
+                    marginTop: "2px",
+                    filter: isActive ? "none" : "grayscale(0.5)",
+                  }}
+                >
+                  📍
+                </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{
-                    margin: 0, fontSize: "12px", fontWeight: 600,
-                    color: isActive ? accentColor : "#eee",
-                    lineHeight: 1.3,
-                  }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: isActive ? accentColor : "#eee",
+                      lineHeight: 1.3,
+                    }}
+                  >
                     {p.title}
                   </p>
                   {p.era && (
-                    <span style={{
-                      fontSize: "9px", padding: "1px 6px", marginTop: "4px",
-                      display: "inline-block", background: `${accentColor}15`,
-                      border: `1px solid ${accentColor}33`, borderRadius: "4px",
-                      color: accentColor, fontWeight: 600,
-                    }}>
-                      {p.era}{p.year ? ` · ${p.year}` : ""}
+                    <span
+                      style={{
+                        fontSize: "9px",
+                        padding: "1px 6px",
+                        marginTop: "4px",
+                        display: "inline-block",
+                        background: `${accentColor}15`,
+                        border: `1px solid ${accentColor}33`,
+                        borderRadius: "4px",
+                        color: accentColor,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {p.era}
+                      {p.year ? ` · ${p.year}` : ""}
                     </span>
                   )}
                   {p.quote && (
-                    <p style={{
-                      margin: "6px 0 0", fontSize: "10px", color: "#777",
-                      fontStyle: "italic", lineHeight: 1.4,
-                      display: "-webkit-box", WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical", overflow: "hidden",
-                    }}>
+                    <p
+                      style={{
+                        margin: "6px 0 0",
+                        fontSize: "10px",
+                        color: "#777",
+                        fontStyle: "italic",
+                        lineHeight: 1.4,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
                       &ldquo;{p.quote}&rdquo;
                     </p>
                   )}
                   {p.mood && (
-                    <div style={{
-                      display: "flex", gap: "4px", marginTop: "4px", flexWrap: "wrap",
-                    }}>
-                      {p.mood.split(",").slice(0, 3).map((m, i) => (
-                        <span key={i} style={{
-                          fontSize: "8px", padding: "1px 5px",
-                          background: "#0a0c18", borderRadius: "4px", color: "#888",
-                        }}>
-                          {m.trim()}
-                        </span>
-                      ))}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "4px",
+                        marginTop: "4px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {p.mood
+                        .split(",")
+                        .slice(0, 3)
+                        .map((m, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              fontSize: "8px",
+                              padding: "1px 5px",
+                              background: "#0a0c18",
+                              borderRadius: "4px",
+                              color: "#888",
+                            }}
+                          >
+                            {m.trim()}
+                          </span>
+                        ))}
                     </div>
                   )}
                 </div>
                 {isActive && (
-                  <span style={{
-                    fontSize: "12px", color: accentColor,
-                    flexShrink: 0, alignSelf: "center",
-                  }}>▶</span>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: accentColor,
+                      flexShrink: 0,
+                      alignSelf: "center",
+                    }}
+                  >
+                    ▶
+                  </span>
                 )}
               </button>
             );
@@ -502,7 +588,8 @@ export default function BookSearch({ onBookSelect, onLocationsExtracted, onLocat
                     flexShrink: 0,
                     alignSelf: "center",
                     padding: "4px 8px",
-                    background: extracting === book.key ? "#2a2d3e" : `${accentColor}22`,
+                    background:
+                      extracting === book.key ? "#2a2d3e" : `${accentColor}22`,
                     border: `1px solid ${accentColor}44`,
                     borderRadius: "6px",
                     cursor: extracting === book.key ? "wait" : "pointer",
@@ -538,7 +625,14 @@ export default function BookSearch({ onBookSelect, onLocationsExtracted, onLocat
 
       {/* Extract error */}
       {extractError && (
-        <p style={{ fontSize: "11px", color: "#ff6b6b", margin: "8px 0 0", textAlign: "center" }}>
+        <p
+          style={{
+            fontSize: "11px",
+            color: "#ff6b6b",
+            margin: "8px 0 0",
+            textAlign: "center",
+          }}
+        >
           {extractError}
         </p>
       )}

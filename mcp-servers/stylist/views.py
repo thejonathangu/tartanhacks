@@ -68,23 +68,53 @@ STYLIST_SYSTEM_PROMPT = (
 def _stylist_style(era: str) -> dict:
     """
     Internal function — callable by the Conductor for parallel orchestration.
-    Returns a plain dict.
+    Returns a plain dict. For unknown eras, returns a sensible default style
+    with an AI suggestion.
     """
     entry = STYLE_OVERRIDES.get(era)
-    if entry is None:
-        raise ValueError(f"Unknown era: {era}")
+
+    if entry is not None:
+        # Known era — use curated style
+        user_msg = (
+            f"Era: {era} — {entry['label']}\n"
+            f"Palette: background {entry['background_color']}, accent {entry['accent_color']}\n"
+            f"Font: {entry['font_suggestion']}\n\n"
+            "Suggest one immersive visual tweak."
+        )
+        ai_suggestion = dedalus_chat(STYLIST_SYSTEM_PROMPT, user_msg)
+
+        return {
+            "era": era,
+            **entry,
+            "ai_suggestion": ai_suggestion,
+        }
+
+    # Unknown era — generate a reasonable default
+    default_entry = {
+        "label": f"{era} — Dynamic",
+        "mapbox_style": "mapbox://styles/mapbox/dark-v11",
+        "paint_overrides": {
+            "circle-color": "#b388ff",
+            "circle-radius": 11,
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 2,
+        },
+        "background_color": "#0d0f1a",
+        "accent_color": "#b388ff",
+        "font_suggestion": "Inter",
+    }
 
     user_msg = (
-        f"Era: {era} — {entry['label']}\n"
-        f"Palette: background {entry['background_color']}, accent {entry['accent_color']}\n"
-        f"Font: {entry['font_suggestion']}\n\n"
-        "Suggest one immersive visual tweak."
+        f"Era: {era} — Dynamic uploaded book\n"
+        f"Palette: background {default_entry['background_color']}, accent {default_entry['accent_color']}\n"
+        f"Font: {default_entry['font_suggestion']}\n\n"
+        "Suggest one immersive visual tweak for this time period."
     )
     ai_suggestion = dedalus_chat(STYLIST_SYSTEM_PROMPT, user_msg)
 
     return {
         "era": era,
-        **entry,
+        **default_entry,
         "ai_suggestion": ai_suggestion,
     }
 

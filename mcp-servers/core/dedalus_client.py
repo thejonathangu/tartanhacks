@@ -43,7 +43,7 @@ def dedalus_chat(
                 ],
                 "max_tokens": max_tokens,
             },
-            timeout=15.0,
+            timeout=30.0,
         )
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]

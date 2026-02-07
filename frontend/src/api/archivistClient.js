@@ -1,8 +1,3 @@
-
-
-
-
-
 const MCP_BASE_URL = import.meta.env.VITE_MCP_BASE_URL || "";
 
 // ─── Individual Agent Endpoints (direct calls) ─────────────────────
@@ -90,7 +85,11 @@ export async function fetchLocationsFromTitle(title, author = "", year = "") {
  * to all 3 specialist MCP agents and returns a unified response
  * with a delegation timeline.
  */
-export async function fetchConductorOrchestrate({ landmarkId, era, featureData }) {
+export async function fetchConductorOrchestrate({
+  landmarkId,
+  era,
+  featureData,
+}) {
   const body = {};
   if (landmarkId) body.landmark_id = landmarkId;
   if (era) body.era = era;
