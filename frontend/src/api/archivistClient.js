@@ -46,6 +46,23 @@ export async function fetchStylistStyle(era) {
   return res.json();
 }
 
+/**
+ * Upload a PDF file for location extraction
+ * Returns { book_title, locations: [...], geojson: {...} }
+ */
+export async function uploadBookPDF(file, title = "") {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (title) formData.append("title", title);
+
+  const res = await fetch(`${MCP_BASE_URL}/upload-book`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) throw new Error(`PDF upload error: ${res.status}`);
+  return res.json();
+}
+
 // ─── Conductor Endpoint (orchestrated parallel call) ────────────────
 
 /**
