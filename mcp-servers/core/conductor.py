@@ -79,7 +79,16 @@ def orchestrate(request):
         query = body.get("query")
         if not query:
             return JsonResponse({"error": "query is required for search action"}, status=400)
+        
+        # Validate limit parameter
         limit = body.get("limit", 10)
+        try:
+            limit = int(limit)
+            if limit < 1 or limit > 100:
+                return JsonResponse({"error": "limit must be between 1 and 100"}, status=400)
+        except (ValueError, TypeError):
+            return JsonResponse({"error": "limit must be a valid integer"}, status=400)
+        
         t0 = time.perf_counter()
         try:
             result = _librarian_search(query, limit=limit)
@@ -95,7 +104,23 @@ def orchestrate(request):
                 }],
                 "total_ms": total,
             })
+        except ValueError as exc:
+            # Validation errors (e.g., empty query) should return 400
+            elapsed = round((time.perf_counter() - t0) * 1000)
+            total = round((time.perf_counter() - t_start) * 1000)
+            return JsonResponse({
+                "error": str(exc),
+                "timeline": [{
+                    "agent": "LibrarianAgent",
+                    "tool": "search_books",
+                    "status": "error",
+                    "elapsed_ms": elapsed,
+                    "error": str(exc),
+                }],
+                "total_ms": total,
+            }, status=400)
         except Exception as exc:
+            # Network/API errors should return 502
             elapsed = round((time.perf_counter() - t0) * 1000)
             total = round((time.perf_counter() - t_start) * 1000)
             return JsonResponse({
