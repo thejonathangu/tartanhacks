@@ -83,6 +83,9 @@ def search(request):
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
+    if not isinstance(body, dict):
+        return JsonResponse({"error": "JSON body must be an object"}, status=400)
+
     query = body.get("query")
     if not query:
         return JsonResponse({"error": "query is required"}, status=400)
