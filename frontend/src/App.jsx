@@ -1007,8 +1007,7 @@ export default function App() {
                 fontWeight: 600,
               }}
             >
-              📄 Upload Book PDF — AI Location Extraction
-            </p>
+              📄 Upload Book PDF — AI Location Extraction            </p>
             <BookUpload
               accentColor={eraColor}
               onLocationsExtracted={(geojson) => {
@@ -1016,6 +1015,7 @@ export default function App() {
                 setSelectedEra(null);
                 setUploadedBookLocations(geojson);
               }}
+              onLocationClick={handleMarkerClick}
             />
           </div>
 
