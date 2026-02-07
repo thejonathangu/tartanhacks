@@ -10,7 +10,7 @@
 
 This project demonstrates **agentic task delegation** using the Model Context Protocol. Instead of one monolithic prompt, a **ConductorAgent** orchestrates three specialist MCP servers in parallel:
 
-```text
+```plaintext
 ┌─────────────────────────────────────────────────────────────┐
 │  Frontend (React + Mapbox GL JS)                            │
 │  ┌──────────┐  ┌──────────────┐  ┌───────────────────────┐  │
