@@ -89,25 +89,59 @@ def _stylist_style(era: str) -> dict:
             "ai_suggestion": ai_suggestion,
         }
 
-    # Unknown era — generate a reasonable default
+    # Unknown era — ask Dedalus to generate an era-appropriate palette
+    import re as _re
+
+    palette_prompt = (
+        "You are a visual design expert. For the literary era/decade "
+        f"'{era}', pick a single hex accent color that evokes that time "
+        "period (e.g. amber for the 1970s, neon green for the 1990s, "
+        "deep blue for the 1800s). Also pick a Google Font that feels "
+        "right.\n\n"
+        "Return ONLY a JSON object like:\n"
+        '{"accent_color": "#hex", "font": "Font Name", "label": "Era — Vibe"}\n'
+        "No other text."
+    )
+    raw_palette = dedalus_chat(
+        "You are a concise JSON-only design assistant.", palette_prompt
+    )
+
+    # Parse the AI response
+    accent = "#b388ff"
+    font = "Inter"
+    label = f"{era} — Dynamic"
+    try:
+        import json as _json
+        match = _re.search(r'\{.*\}', raw_palette, _re.DOTALL)
+        if match:
+            pd = _json.loads(match.group())
+            if pd.get("accent_color", "").startswith("#"):
+                accent = pd["accent_color"]
+            if pd.get("font"):
+                font = pd["font"]
+            if pd.get("label"):
+                label = pd["label"]
+    except Exception:
+        pass  # fall back to defaults
+
     default_entry = {
-        "label": f"{era} — Dynamic",
+        "label": label,
         "mapbox_style": "mapbox://styles/mapbox/dark-v11",
         "paint_overrides": {
-            "circle-color": "#b388ff",
+            "circle-color": accent,
             "circle-radius": 11,
             "circle-stroke-color": "#ffffff",
             "circle-stroke-width": 2,
         },
         "background_color": "#0d0f1a",
-        "accent_color": "#b388ff",
-        "font_suggestion": "Inter",
+        "accent_color": accent,
+        "font_suggestion": font,
     }
 
     user_msg = (
-        f"Era: {era} — Dynamic uploaded book\n"
-        f"Palette: background {default_entry['background_color']}, accent {default_entry['accent_color']}\n"
-        f"Font: {default_entry['font_suggestion']}\n\n"
+        f"Era: {era} — {label}\n"
+        f"Palette: background {default_entry['background_color']}, accent {accent}\n"
+        f"Font: {font}\n\n"
         "Suggest one immersive visual tweak for this time period."
     )
     ai_suggestion = dedalus_chat(STYLIST_SYSTEM_PROMPT, user_msg)

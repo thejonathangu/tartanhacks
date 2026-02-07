@@ -195,7 +195,8 @@ export default function MapComponent({
     map.on("style.load", () => {
       styleLoadedRef.current = true;
       addAllLayers(map);
-      // Apply year range filter if active
+      // Apply year range filter if active — only to curated layers
+      // (uploaded layers are managed by their own effect)
       const yr = yearRangeRef.current;
       const era = filterEraRef.current;
       let filter = null;
@@ -214,10 +215,6 @@ export default function MapComponent({
         "literary-labels",
         "route-lines",
       ].forEach((id) => {
-        if (map.getLayer(id)) map.setFilter(id, filter);
-      });
-      // Also filter uploaded layers
-      ["uploaded-markers", "uploaded-labels"].forEach((id) => {
         if (map.getLayer(id)) map.setFilter(id, filter);
       });
     });
@@ -290,65 +287,122 @@ export default function MapComponent({
         }
       }
     }
-  }, [yearRange, filterEra, uploadedBookLocations]);
+  }, [yearRange, filterEra]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Apply StylistAgent overrides ──
+  // ── Cross-book connection lines ──
   useEffect(() => {
     const map = mapRef.current;
-    if (
-      !map ||
-      !stylistOverrides ||
-      !styleLoadedRef.current ||
-      !map.isStyleLoaded()
-    )
-      return;
+    if (!map || !styleLoadedRef.current || !map.isStyleLoaded()) return;
 
-    const po = stylistOverrides.paint_overrides;
-    if (!po) return;
+    // Combine all features
+    const uploadedFeats = uploadedBookLocations?.features || [];
+    const allFeats = [...literaryGeoJSON.features, ...uploadedFeats];
 
-    if (map.getLayer("literary-markers")) {
-      if (po["circle-color"])
-        map.setPaintProperty(
-          "literary-markers",
-          "circle-color",
-          po["circle-color"],
-        );
-      if (po["circle-radius"])
-        map.setPaintProperty(
-          "literary-markers",
-          "circle-radius",
-          po["circle-radius"],
-        );
-      if (po["circle-stroke-color"])
-        map.setPaintProperty(
-          "literary-markers",
-          "circle-stroke-color",
-          po["circle-stroke-color"],
-        );
-      if (po["circle-stroke-width"])
-        map.setPaintProperty(
-          "literary-markers",
-          "circle-stroke-width",
-          po["circle-stroke-width"],
-        );
+    // Find pairs of features from different books within ~0.5° (roughly same city)
+    const THRESHOLD = 0.5;
+    const connections = [];
+    for (let i = 0; i < allFeats.length; i++) {
+      for (let j = i + 1; j < allFeats.length; j++) {
+        const a = allFeats[i],
+          b = allFeats[j];
+        const bookA = a.properties?.book,
+          bookB = b.properties?.book;
+        if (!bookA || !bookB || bookA === bookB) continue;
+        const [lngA, latA] = a.geometry?.coordinates || [];
+        const [lngB, latB] = b.geometry?.coordinates || [];
+        if (lngA == null || lngB == null) continue;
+        const dist = Math.sqrt((lngA - lngB) ** 2 + (latA - latB) ** 2);
+        if (dist < THRESHOLD && dist > 0.001) {
+          connections.push({
+            type: "Feature",
+            properties: { bookA, bookB, label: `${bookA} ↔ ${bookB}` },
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [lngA, latA],
+                [lngB, latB],
+              ],
+            },
+          });
+        }
+      }
     }
-  }, [stylistOverrides]);
+
+    const geojson = { type: "FeatureCollection", features: connections };
+
+    if (connections.length > 0) {
+      if (!map.getSource("cross-book-lines")) {
+        map.addSource("cross-book-lines", { type: "geojson", data: geojson });
+        map.addLayer({
+          id: "cross-book-connections",
+          type: "line",
+          source: "cross-book-lines",
+          paint: {
+            "line-color": "#b388ff",
+            "line-width": 2,
+            "line-dasharray": [4, 4],
+            "line-opacity": 0.6,
+          },
+        });
+        // Label at midpoint
+        map.addLayer({
+          id: "cross-book-labels",
+          type: "symbol",
+          source: "cross-book-lines",
+          layout: {
+            "symbol-placement": "line-center",
+            "text-field": "📚 Literary Intersection",
+            "text-size": 10,
+            "text-offset": [0, -1],
+          },
+          paint: {
+            "text-color": "#b388ff",
+            "text-halo-color": "#000",
+            "text-halo-width": 1,
+          },
+        });
+      } else {
+        map.getSource("cross-book-lines").setData(geojson);
+      }
+    } else {
+      if (map.getLayer("cross-book-labels"))
+        map.removeLayer("cross-book-labels");
+      if (map.getLayer("cross-book-connections"))
+        map.removeLayer("cross-book-connections");
+      if (map.getSource("cross-book-lines"))
+        map.removeSource("cross-book-lines");
+    }
+  }, [uploadedBookLocations]);
 
   // ── Uploaded book locations from PDF ──
+  const uploadedLocRef = useRef(uploadedBookLocations);
+  uploadedLocRef.current = uploadedBookLocations;
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !uploadedBookLocations) return;
 
-    const addUploadedLayer = () => {
-      // Remove old layers if they exist
-      if (map.getLayer("uploaded-markers")) map.removeLayer("uploaded-markers");
-      if (map.getLayer("uploaded-labels")) map.removeLayer("uploaded-labels");
-      if (map.getSource("uploaded-points")) map.removeSource("uploaded-points");
+    let cancelled = false;
 
-      map.addSource("uploaded-points", {
-        type: "geojson",
-        data: uploadedBookLocations,
-      });
+    function doAdd() {
+      if (cancelled) return;
+      const data = uploadedLocRef.current;
+      if (!data) return;
+
+      // Remove old layers/source if they exist
+      try {
+        if (map.getLayer("uploaded-markers"))
+          map.removeLayer("uploaded-markers");
+      } catch (_) {}
+      try {
+        if (map.getLayer("uploaded-labels")) map.removeLayer("uploaded-labels");
+      } catch (_) {}
+      try {
+        if (map.getSource("uploaded-points"))
+          map.removeSource("uploaded-points");
+      } catch (_) {}
+
+      map.addSource("uploaded-points", { type: "geojson", data });
 
       map.addLayer({
         id: "uploaded-markers",
@@ -381,41 +435,64 @@ export default function MapComponent({
         },
       });
 
-      // Click handlers
-      map.on("click", "uploaded-markers", (e) => {
-        const feature = e.features[0];
-        const coords = feature.geometry.coordinates.slice();
-        map.flyTo({ center: coords, zoom: 14, speed: 1.2, pitch: 45 });
-        if (onMarkerClickRef.current) onMarkerClickRef.current(feature);
-      });
+      // Click handler
+      map.on("click", "uploaded-markers", onClickUploaded);
+      map.on("mouseenter", "uploaded-markers", onEnterUploaded);
+      map.on("mouseleave", "uploaded-markers", onLeaveUploaded);
 
-      map.on("mouseenter", "uploaded-markers", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "uploaded-markers", () => {
-        map.getCanvas().style.cursor = "";
-      });
-
-      // Fit map to show all uploaded points
-      if (uploadedBookLocations.features.length > 0) {
-        const bounds = uploadedBookLocations.features.reduce(
-          (b, f) => {
-            return b.extend(f.geometry.coordinates);
-          },
-          new mapboxgl.LngLatBounds(
-            uploadedBookLocations.features[0].geometry.coordinates,
-            uploadedBookLocations.features[0].geometry.coordinates,
-          ),
-        );
-        map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
+      // Fit bounds
+      if (data.features && data.features.length > 0) {
+        const bounds = new mapboxgl.LngLatBounds();
+        data.features.forEach((f) => {
+          if (f.geometry?.coordinates) bounds.extend(f.geometry.coordinates);
+        });
+        if (!bounds.isEmpty()) {
+          map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
+        }
       }
-    };
-
-    if (map.isStyleLoaded()) {
-      addUploadedLayer();
-    } else {
-      map.once("style.load", addUploadedLayer);
     }
+
+    function onClickUploaded(e) {
+      const feature = e.features[0];
+      const coords = feature.geometry.coordinates.slice();
+      map.flyTo({ center: coords, zoom: 14, speed: 1.2, pitch: 45 });
+      if (onMarkerClickRef.current) onMarkerClickRef.current(feature);
+    }
+    function onEnterUploaded() {
+      map.getCanvas().style.cursor = "pointer";
+    }
+    function onLeaveUploaded() {
+      map.getCanvas().style.cursor = "";
+    }
+
+    // Robust approach: try immediately, retry every 200ms up to 3s,
+    // and also listen for style.load
+    function tryAdd() {
+      if (cancelled) return;
+      try {
+        doAdd();
+      } catch (err) {
+        // Style not ready yet — retry shortly
+        setTimeout(tryAdd, 200);
+      }
+    }
+
+    tryAdd();
+    map.on("style.load", tryAdd);
+
+    return () => {
+      cancelled = true;
+      map.off("style.load", tryAdd);
+      try {
+        map.off("click", "uploaded-markers", onClickUploaded);
+      } catch (_) {}
+      try {
+        map.off("mouseenter", "uploaded-markers", onEnterUploaded);
+      } catch (_) {}
+      try {
+        map.off("mouseleave", "uploaded-markers", onLeaveUploaded);
+      } catch (_) {}
+    };
   }, [uploadedBookLocations]);
 
   // ── Popup rendering ──

@@ -103,3 +103,17 @@ export async function fetchConductorOrchestrate({
   if (!res.ok) throw new Error(`ConductorAgent error: ${res.status}`);
   return res.json();
 }
+
+/**
+ * Chat about a place — ask freeform questions about a location.
+ * Returns { answer, elapsed_ms, timeline }
+ */
+export async function fetchChatAboutPlace(question, context = {}) {
+  const res = await fetch(`${MCP_BASE_URL}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, context }),
+  });
+  if (!res.ok) throw new Error(`Chat error: ${res.status}`);
+  return res.json();
+}
