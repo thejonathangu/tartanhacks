@@ -6,5 +6,11 @@ export default defineConfig({
   server: {
     host: "0.0.0.0", // needed for devcontainer port forwarding
     port: 3000,
+    proxy: {
+      "/tools": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
   },
 });

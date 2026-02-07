@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import { literaryGeoJSON } from "../data/literaryPoints";
 
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || "";
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || "";
 
 /**
  * Reusable MapComponent
@@ -14,6 +14,33 @@ export default function MapComponent({ onMarkerClick, popupContent }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const popupRef = useRef(null);
+  const [mapError, setMapError] = useState(null);
+
+  // Show a helpful message if no token
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        width: "100%", height: "100%", background: "#0d0d0d", color: "#fff",
+        fontFamily: "system-ui, sans-serif", flexDirection: "column", gap: "16px",
+      }}>
+        <h1 style={{ fontSize: "48px", margin: 0 }}>🗺️</h1>
+        <h2 style={{ margin: 0 }}>Living Literary Map</h2>
+        <p style={{ color: "#aaa", maxWidth: "400px", textAlign: "center", lineHeight: 1.6 }}>
+          Mapbox token not set. Add your token to <code style={{ color: "#e6b800" }}>frontend/.env</code>:
+        </p>
+        <pre style={{
+          background: "#1a1a2e", padding: "12px 20px", borderRadius: "8px",
+          color: "#4ecdc4", fontSize: "13px",
+        }}>
+{`VITE_MAPBOX_ACCESS_TOKEN=pk.your_token_here`}
+        </pre>
+        <p style={{ color: "#666", fontSize: "12px" }}>Then restart the dev server.</p>
+      </div>
+    );
+  }
+
+  mapboxgl.accessToken = MAPBOX_TOKEN;
 
   // Initialize map
   useEffect(() => {

@@ -7,7 +7,7 @@ npm install
 
 echo "🐍 Installing Python MCP server dependencies..."
 cd /workspace/mcp-servers
-pip install --user -r requirements.txt
+pip install -r requirements.txt
 
 echo ""
 echo "============================================"
