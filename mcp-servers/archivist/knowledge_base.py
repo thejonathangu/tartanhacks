@@ -25,7 +25,6 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         "year": 1949,
         "book": "The Joy Luck Club",
         "era": "1940s",
-        "mood": ["hope", "longing", "displacement", "new beginnings"],
     },
     "jlc-chinatown": {
         "quote": "We are not those kind of people—we are better.",
@@ -43,7 +42,6 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         "year": 1949,
         "book": "The Joy Luck Club",
         "era": "1940s",
-        "mood": ["pride", "community", "tradition", "resilience"],
     },
     "hr-harlem": {
         "quote": "I, too, sing America. I am the darker brother.",
@@ -62,7 +60,6 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         "year": 1925,
         "book": "Harlem Renaissance Anthology",
         "era": "1920s",
-        "mood": ["vibrant", "music", "defiance", "joy", "nightlife"],
     },
     "hr-apollo": {
         "quote": (
@@ -82,7 +79,6 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         "year": 1934,
         "book": "Harlem Renaissance Anthology",
         "era": "1920s",
-        "mood": ["performance", "energy", "ambition", "celebration"],
     },
     "hr-cathedral": {
         "quote": (
@@ -103,7 +99,6 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         "year": 1925,
         "book": "Harlem Renaissance Anthology",
         "era": "1920s",
-        "mood": ["dreams", "melancholy", "aspiration", "spirituality", "quiet reflection"],
     },
     "cr-montgomery": {
         "quote": (
@@ -125,7 +120,6 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         "year": 1955,
         "book": "Civil Rights Landmarks",
         "era": "1960s",
-        "mood": ["courage", "exhaustion", "defiance", "dignity"],
     },
     "cr-birmingham": {
         "quote": "Injustice anywhere is a threat to justice everywhere.",
@@ -143,7 +137,6 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         "year": 1963,
         "book": "Civil Rights Landmarks",
         "era": "1960s",
-        "mood": ["tragedy", "anger", "grief", "determination", "injustice"],
     },
     "cr-lincoln-memorial": {
         "quote": (
@@ -165,6 +158,5 @@ KNOWLEDGE_BASE: dict[str, dict] = {
         "year": 1963,
         "book": "Civil Rights Landmarks",
         "era": "1960s",
-        "mood": ["hope", "unity", "power", "inspiration", "conviction"],
     },
 }
