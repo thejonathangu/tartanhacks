@@ -69,6 +69,33 @@ LINGUIST_SYSTEM_PROMPT = (
 )
 
 
+def _linguist_dialect(era: str) -> dict:
+    """
+    Internal function — callable by the Conductor for parallel orchestration.
+    Returns a plain dict.
+    """
+    entry = ERA_DIALECTS.get(era)
+    if entry is None:
+        raise ValueError(f"Unknown era: {era}")
+
+    slang_list = ", ".join(f"'{s['term']}'" for s in entry["slang"])
+    user_msg = (
+        f"Era: {era} — {entry['era_label']}\n"
+        f"Slang terms: {slang_list}\n"
+        f"Notes: {entry['dialect_notes']}\n\n"
+        "Write a 'Did You Know?' blurb."
+    )
+    ai_blurb = dedalus_chat(LINGUIST_SYSTEM_PROMPT, user_msg)
+
+    return {
+        "era": era,
+        "era_label": entry["era_label"],
+        "slang": entry["slang"],
+        "dialect_notes": entry["dialect_notes"],
+        "ai_blurb": ai_blurb,
+    }
+
+
 @csrf_exempt
 @require_POST
 def dialect(request):
@@ -85,24 +112,9 @@ def dialect(request):
     if not era:
         return JsonResponse({"error": "era is required"}, status=400)
 
-    entry = ERA_DIALECTS.get(era)
-    if entry is None:
-        return JsonResponse({"error": f"Unknown era: {era}"}, status=404)
+    try:
+        result = _linguist_dialect(era)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=404)
 
-    # ── Dedalus enrichment ──────────────────────────────────────────
-    slang_list = ", ".join(f"'{s['term']}'" for s in entry["slang"])
-    user_msg = (
-        f"Era: {era} — {entry['era_label']}\n"
-        f"Slang terms: {slang_list}\n"
-        f"Notes: {entry['dialect_notes']}\n\n"
-        "Write a 'Did You Know?' blurb."
-    )
-    ai_blurb = dedalus_chat(LINGUIST_SYSTEM_PROMPT, user_msg)
-
-    return JsonResponse({
-        "era": era,
-        "era_label": entry["era_label"],
-        "slang": entry["slang"],
-        "dialect_notes": entry["dialect_notes"],
-        "ai_blurb": ai_blurb,
-    })
+    return JsonResponse(result)

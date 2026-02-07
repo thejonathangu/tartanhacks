@@ -26,6 +26,34 @@ ARCHIVIST_SYSTEM_PROMPT = (
 )
 
 
+def _archivist_lookup(landmark_id: str) -> dict:
+    """
+    Internal function — callable by the Conductor for parallel orchestration.
+    Returns a plain dict (not an HttpResponse).
+    """
+    entry = KNOWLEDGE_BASE.get(landmark_id)
+    if entry is None:
+        raise ValueError(f"Unknown landmark: {landmark_id}")
+
+    user_msg = (
+        f"Book: {entry['book']} ({entry['era']})\n"
+        f"Quote: \"{entry['quote']}\"\n"
+        f"Base context: {entry['historical_context']}\n\n"
+        "Give me an enriched 2–3 sentence deep-dive insight."
+    )
+    ai_insight = dedalus_chat(ARCHIVIST_SYSTEM_PROMPT, user_msg)
+
+    return {
+        "landmark_id": landmark_id,
+        "quote": entry["quote"],
+        "historical_context": entry["historical_context"],
+        "dialect_note": entry.get("dialect_note"),
+        "year": entry["year"],
+        "book": entry["book"],
+        "ai_insight": ai_insight,
+    }
+
+
 @csrf_exempt
 @require_POST
 def lookup(request):
@@ -42,25 +70,9 @@ def lookup(request):
     if not landmark_id:
         return JsonResponse({"error": "landmark_id is required"}, status=400)
 
-    entry = KNOWLEDGE_BASE.get(landmark_id)
-    if entry is None:
-        return JsonResponse({"error": f"Unknown landmark: {landmark_id}"}, status=404)
+    try:
+        result = _archivist_lookup(landmark_id)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=404)
 
-    # ── Dedalus enrichment ──────────────────────────────────────────
-    user_msg = (
-        f"Book: {entry['book']} ({entry['era']})\n"
-        f"Quote: \"{entry['quote']}\"\n"
-        f"Base context: {entry['historical_context']}\n\n"
-        "Give me an enriched 2–3 sentence deep-dive insight."
-    )
-    ai_insight = dedalus_chat(ARCHIVIST_SYSTEM_PROMPT, user_msg)
-
-    return JsonResponse({
-        "landmark_id": landmark_id,
-        "quote": entry["quote"],
-        "historical_context": entry["historical_context"],
-        "dialect_note": entry.get("dialect_note"),
-        "year": entry["year"],
-        "book": entry["book"],
-        "ai_insight": ai_insight,
-    })
+    return JsonResponse(result)

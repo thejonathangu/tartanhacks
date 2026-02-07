@@ -65,6 +65,30 @@ STYLIST_SYSTEM_PROMPT = (
 )
 
 
+def _stylist_style(era: str) -> dict:
+    """
+    Internal function — callable by the Conductor for parallel orchestration.
+    Returns a plain dict.
+    """
+    entry = STYLE_OVERRIDES.get(era)
+    if entry is None:
+        raise ValueError(f"Unknown era: {era}")
+
+    user_msg = (
+        f"Era: {era} — {entry['label']}\n"
+        f"Palette: background {entry['background_color']}, accent {entry['accent_color']}\n"
+        f"Font: {entry['font_suggestion']}\n\n"
+        "Suggest one immersive visual tweak."
+    )
+    ai_suggestion = dedalus_chat(STYLIST_SYSTEM_PROMPT, user_msg)
+
+    return {
+        "era": era,
+        **entry,
+        "ai_suggestion": ai_suggestion,
+    }
+
+
 @csrf_exempt
 @require_POST
 def style(request):
@@ -81,21 +105,9 @@ def style(request):
     if not era:
         return JsonResponse({"error": "era is required"}, status=400)
 
-    entry = STYLE_OVERRIDES.get(era)
-    if entry is None:
-        return JsonResponse({"error": f"Unknown era: {era}"}, status=404)
+    try:
+        result = _stylist_style(era)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=404)
 
-    # ── Dedalus enrichment ──────────────────────────────────────────
-    user_msg = (
-        f"Era: {era} — {entry['label']}\n"
-        f"Palette: background {entry['background_color']}, accent {entry['accent_color']}\n"
-        f"Font: {entry['font_suggestion']}\n\n"
-        "Suggest one immersive visual tweak."
-    )
-    ai_suggestion = dedalus_chat(STYLIST_SYSTEM_PROMPT, user_msg)
-
-    return JsonResponse({
-        "era": era,
-        **entry,
-        "ai_suggestion": ai_suggestion,
-    })
+    return JsonResponse(result)
