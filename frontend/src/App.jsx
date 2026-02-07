@@ -167,8 +167,6 @@ export default function App() {
   const [narrationEnabled, setNarrationEnabled] = useState(false);
   const synthRef = useRef(null);
 
-
-
   /* ── Compute global year range from curated + uploaded data ── */
   const globalYearRange = useMemo(() => {
     const years = [];

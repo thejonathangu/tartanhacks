@@ -17,7 +17,7 @@ services:
       - key: DEBUG
         value: "false"
       - key: DEDALUS_API_KEY
-        sync: false          # you'll set this manually in the Render dashboard
+        sync: false # you'll set this manually in the Render dashboard
       - key: DEDALUS_MODEL
         value: openai/gpt-4o
       - key: PYTHON_VERSION
@@ -34,14 +34,14 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_MAPBOX_ACCESS_TOKEN
-        sync: false          # set manually in Render dashboard
+        sync: false # set manually in Render dashboard
       - key: VITE_MCP_BASE_URL
         fromService:
           type: web
           name: literary-map-api
           envVarKey: RENDER_EXTERNAL_URL
       - key: VITE_GOOGLE_API_KEY
-        sync: false          # set manually in Render dashboard
+        sync: false # set manually in Render dashboard
     routes:
       - type: rewrite
         source: /*
