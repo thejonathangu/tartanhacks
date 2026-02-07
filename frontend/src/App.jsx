@@ -457,7 +457,6 @@ export default function App() {
               📄 Upload Book PDF — AI Location Extraction
             </p>
             <BookUpload
-              accentColor={eraColor}
               onLocationsExtracted={setUploadedBookLocations}
             />
           </div>
