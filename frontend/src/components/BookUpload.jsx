@@ -6,7 +6,7 @@ import { uploadBookPDF } from "../api/archivistClient";
  * Lets users drag-and-drop or browse for a PDF, optionally set a title,
  * then calls the backend to extract locations and add them to the map.
  */
-export default function BookUpload({ onLocationsExtracted }) {
+export default function BookUpload({ onLocationsExtracted, onLocationClick }) {
   const [file, setFile] = useState(null);
   const [title, setTitle] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -289,8 +289,9 @@ export default function BookUpload({ onLocationsExtracted }) {
               (a, b) => (a.properties.rank || 999) - (b.properties.rank || 999)
             )
             .map((f, i) => (
-              <div
+              <button
                 key={i}
+                onClick={() => onLocationClick && onLocationClick(f)}
                 style={{
                   background: "#0d0f1a",
                   borderRadius: "4px",
@@ -300,6 +301,21 @@ export default function BookUpload({ onLocationsExtracted }) {
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
+                  border: "1px solid transparent",
+                  cursor: onLocationClick ? "pointer" : "default",
+                  width: "100%",
+                  textAlign: "left",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (onLocationClick) {
+                    e.currentTarget.style.background = "#1a1d2e";
+                    e.currentTarget.style.borderColor = "#4ecdc4";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#0d0f1a";
+                  e.currentTarget.style.borderColor = "transparent";
                 }}
               >
                 <span
@@ -329,7 +345,7 @@ export default function BookUpload({ onLocationsExtracted }) {
                     </span>
                   )}
                 </div>
-              </div>
+              </button>
             ))}
           <button
             onClick={handleClear}

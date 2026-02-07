@@ -100,8 +100,8 @@ function DelegationTimeline({ timeline, totalMs }) {
                   color: isSuccess
                     ? "#4ecdc4"
                     : step.status === "skipped"
-                      ? "#666"
-                      : "#ff6b6b",
+                    ? "#666"
+                    : "#ff6b6b",
                 }}
               >
                 {step.elapsed_ms}ms
@@ -123,8 +123,8 @@ function DelegationTimeline({ timeline, totalMs }) {
                   background: isSuccess
                     ? "linear-gradient(90deg, #4ecdc4, #44a8a0)"
                     : step.status === "skipped"
-                      ? "#333"
-                      : "#ff6b6b",
+                    ? "#333"
+                    : "#ff6b6b",
                   transition: "width 0.6s ease",
                 }}
               />
@@ -261,7 +261,7 @@ export default function App() {
       synthRef.current = utter;
       window.speechSynthesis.speak(utter);
     },
-    [narrationEnabled],
+    [narrationEnabled]
   );
 
   /* ── Story Mode — auto-fly through locations ────────────────── */
@@ -372,7 +372,7 @@ export default function App() {
           const voices = window.speechSynthesis.getVoices();
           const preferred =
             voices.find(
-              (v) => v.lang === "en-US" && v.name.includes("Google"),
+              (v) => v.lang === "en-US" && v.name.includes("Google")
             ) ||
             voices.find((v) => v.lang === "en-US") ||
             voices[0];
@@ -577,7 +577,7 @@ export default function App() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "24px" }}>🗺️</span>
+            <span style={{ fontSize: "24px" }}>🗺️</span>{" "}
             <div>
               <h1
                 style={{
@@ -587,7 +587,7 @@ export default function App() {
                   letterSpacing: "-0.3px",
                 }}
               >
-                Living Literary Map
+                Odyssey
               </h1>
               <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#666" }}>
                 MCP-Orchestrated · Powered by Dedalus Labs
@@ -756,7 +756,9 @@ export default function App() {
             </span>
             <span style={{ fontSize: "10px", color: "#555", padding: "0 8px" }}>
               {yearRange
-                ? `${selectedEra || ""} · ${yearRange[1] - yearRange[0]} yr span`
+                ? `${selectedEra || ""} · ${
+                    yearRange[1] - yearRange[0]
+                  } yr span`
                 : "All eras"}
             </span>
             <span
@@ -887,7 +889,9 @@ export default function App() {
                   style={{
                     background: isActive ? `${meta.color}22` : "#141728",
                     color: isActive ? meta.color : "#666",
-                    border: `1px solid ${isActive ? meta.color + "66" : "#1e2235"}`,
+                    border: `1px solid ${
+                      isActive ? meta.color + "66" : "#1e2235"
+                    }`,
                     borderRadius: "6px",
                     padding: "4px 8px",
                     cursor: "pointer",
@@ -1007,7 +1011,7 @@ export default function App() {
                 fontWeight: 600,
               }}
             >
-              📄 Upload Book PDF — AI Location Extraction
+              📄 Upload Book PDF — AI Location Extraction{" "}
             </p>
             <BookUpload
               accentColor={eraColor}
@@ -1016,6 +1020,7 @@ export default function App() {
                 setSelectedEra(null);
                 setUploadedBookLocations(geojson);
               }}
+              onLocationClick={handleMarkerClick}
             />
           </div>
 
