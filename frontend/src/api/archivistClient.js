@@ -2,6 +2,20 @@ const MCP_BASE_URL = import.meta.env.VITE_MCP_BASE_URL || "";
 
 // ─── Individual Agent Endpoints (direct calls) ─────────────────────
 
+/**
+ * LibrarianAgent — Search Open Library for books by title.
+ * Returns { query, num_found, books: [...] }
+ */
+export async function fetchLibrarianSearch(query, limit = 10) {
+  const res = await fetch(`${MCP_BASE_URL}/tools/librarian/search`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, limit }),
+  });
+  if (!res.ok) throw new Error(`LibrarianAgent error: ${res.status}`);
+  return res.json();
+}
+
 export async function fetchArchivistContext(landmarkId) {
   const res = await fetch(`${MCP_BASE_URL}/tools/archivist/lookup`, {
     method: "POST",
@@ -50,43 +64,5 @@ export async function fetchConductorOrchestrate({ landmarkId, era }) {
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`ConductorAgent error: ${res.status}`);
-  return res.json();
-}
-
-// ─── Vibe Search Endpoint (semantic / feeling-based search) ─────────
-
-/**
- * Semantic "Vibe Search" — search by feelings, not addresses.
- * e.g. "Show me somewhere that feels like a lonely rainy Sunday"
- */
-export async function fetchVibeSearch(query) {
-  const res = await fetch(`${MCP_BASE_URL}/search`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
-  });
-  if (!res.ok) throw new Error(`VibeSearch error: ${res.status}`);
-  return res.json();
-}
-
-// ─── Book PDF Upload Endpoint ───────────────────────────────────────
-
-/**
- * Upload a book PDF and extract geographic locations via AI.
- * Returns a GeoJSON FeatureCollection with the extracted points.
- */
-export async function uploadBookPDF(file, title = "") {
-  const formData = new FormData();
-  formData.append("file", file);
-  if (title) formData.append("title", title);
-
-  const res = await fetch(`${MCP_BASE_URL}/upload-book`, {
-    method: "POST",
-    body: formData,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Upload error: ${res.status}`);
-  }
   return res.json();
 }

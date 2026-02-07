@@ -7,8 +7,7 @@ This is the single entry-point the frontend calls.  It:
   3. Fans out PARALLEL requests to the ArchivistAgent, LinguistAgent,
      and StylistAgent.
   4. Merges the results and returns a unified response with a visible
-     delegation timeline and chain-of-thought reasoning — perfect for
-     hackathon demos.
+     delegation timeline — perfect for hackathon demos.
 
 This demonstrates Modular Orchestration: each task is handled by the
 specialist best suited for it, coordinated by a single Conductor.
@@ -16,7 +15,7 @@ specialist best suited for it, coordinated by a single Conductor.
 
 import json
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -24,6 +23,7 @@ from django.views.decorators.http import require_POST
 
 from archivist.knowledge_base import KNOWLEDGE_BASE
 from archivist.views import _archivist_lookup
+from librarian.views import _librarian_search
 from linguist.views import _linguist_dialect
 from stylist.views import _stylist_style
 from core.dedalus_client import dedalus_chat
@@ -59,8 +59,9 @@ def orchestrate(request):
     Body: { "landmark_id": "hr-harlem" }
        OR { "era": "1920s" }
        OR { "landmark_id": "hr-harlem", "era": "1920s" }
+       OR { "action": "search", "query": "joy luck club", "limit": 10 }
 
-    Returns a unified response with delegation timeline and chain-of-thought.
+    Returns a unified response with delegation timeline.
     """
     t_start = time.perf_counter()
 
@@ -71,6 +72,43 @@ def orchestrate(request):
 
     landmark_id = body.get("landmark_id")
     era = body.get("era")
+    action = body.get("action")
+
+    # ── Book search shortcut — delegates to LibrarianAgent only ──
+    if action == "search":
+        query = body.get("query")
+        if not query:
+            return JsonResponse({"error": "query is required for search action"}, status=400)
+        limit = body.get("limit", 10)
+        t0 = time.perf_counter()
+        try:
+            result = _librarian_search(query, limit=limit)
+            elapsed = round((time.perf_counter() - t0) * 1000)
+            total = round((time.perf_counter() - t_start) * 1000)
+            return JsonResponse({
+                "librarian": result,
+                "timeline": [{
+                    "agent": "LibrarianAgent",
+                    "tool": "search_books",
+                    "status": "success",
+                    "elapsed_ms": elapsed,
+                }],
+                "total_ms": total,
+            })
+        except Exception as exc:
+            elapsed = round((time.perf_counter() - t0) * 1000)
+            total = round((time.perf_counter() - t_start) * 1000)
+            return JsonResponse({
+                "error": str(exc),
+                "timeline": [{
+                    "agent": "LibrarianAgent",
+                    "tool": "search_books",
+                    "status": "error",
+                    "elapsed_ms": elapsed,
+                    "error": str(exc),
+                }],
+                "total_ms": total,
+            }, status=502)
 
     # If we have a landmark_id, infer the era from the knowledge base
     if landmark_id and not era:
@@ -83,34 +121,6 @@ def orchestrate(request):
             {"error": "Provide at least landmark_id or era"}, status=400
         )
 
-    # ── Chain of Thought — visible reasoning steps ──────────────────
-    chain_of_thought = []
-
-    def cot(agent, step, detail=""):
-        chain_of_thought.append({
-            "agent": agent,
-            "step": step,
-            "detail": detail,
-            "ts": round((time.perf_counter() - t_start) * 1000),
-        })
-
-    cot("ConductorAgent", "RECEIVED_REQUEST",
-        f"landmark_id={landmark_id}, era={era}")
-
-    delegates = []
-    if landmark_id:
-        delegates.append("ArchivistAgent")
-        cot("ConductorAgent", "REASONING",
-            f"landmark_id present → delegating to ArchivistAgent for historical context")
-    if era:
-        delegates.append("LinguistAgent")
-        delegates.append("StylistAgent")
-        cot("ConductorAgent", "REASONING",
-            f"era={era} → delegating to LinguistAgent + StylistAgent in parallel")
-
-    cot("ConductorAgent", "DELEGATING",
-        f"Fan-out to {len(delegates)} agents: {', '.join(delegates)}")
-
     # ── Fan out to specialist agents in parallel ────────────────────
     timeline = []
     results = {}
@@ -118,16 +128,10 @@ def orchestrate(request):
 
     with ThreadPoolExecutor(max_workers=3) as pool:
         if landmark_id:
-            cot("ArchivistAgent", "TOOL_CALL",
-                f'get_historical_context(landmark_id="{landmark_id}")')
             futures["archivist"] = pool.submit(
                 _timed_call, "ArchivistAgent", _archivist_lookup, landmark_id
             )
         if era:
-            cot("LinguistAgent", "TOOL_CALL",
-                f'analyze_period_dialect(era="{era}")')
-            cot("StylistAgent", "TOOL_CALL",
-                f'generate_map_style(era="{era}")')
             futures["linguist"] = pool.submit(
                 _timed_call, "LinguistAgent", _linguist_dialect, era
             )
@@ -137,48 +141,24 @@ def orchestrate(request):
 
         for key, future in futures.items():
             name, result, elapsed, error = future.result()
-
-            tool_name = {
-                "ArchivistAgent": "get_historical_context",
-                "LinguistAgent": "analyze_period_dialect",
-                "StylistAgent": "generate_map_style",
-            }.get(name, "unknown")
-
             timeline.append({
                 "agent": name,
-                "tool": tool_name,
+                "tool": {
+                    "ArchivistAgent": "get_historical_context",
+                    "LinguistAgent": "analyze_period_dialect",
+                    "StylistAgent": "generate_map_style",
+                }.get(name, "unknown"),
                 "status": "success" if error is None else "error",
                 "elapsed_ms": elapsed,
                 "error": error,
             })
-
-            if error is None:
+            if result is not None:
                 results[key] = result
-                if key == "archivist":
-                    cot(name, "RESULT",
-                        f'Found: "{result.get("book", "")}" — '
-                        f'{result.get("quote", "")[:60]}...')
-                elif key == "linguist":
-                    slang_preview = ", ".join(
-                        s["term"] for s in result.get("slang", [])[:3]
-                    )
-                    cot(name, "RESULT",
-                        f"Identified {len(result.get('slang', []))} slang terms: "
-                        f"{slang_preview}")
-                elif key == "stylist":
-                    cot(name, "RESULT",
-                        f'Generated style: {result.get("label", "")} '
-                        f'(accent: {result.get("accent_color", "")})')
-            else:
-                cot(name, "ERROR", f"Failed: {error}")
 
     # ── Conductor synthesis — tie it all together ───────────────────
     synthesis = None
     synth_ms = 0
     if results:
-        cot("ConductorAgent", "SYNTHESIZING",
-            f"Merging {len(results)} agent results into unified narrative")
-
         parts = []
         if "archivist" in results:
             a = results["archivist"]
@@ -197,9 +177,6 @@ def orchestrate(request):
         synthesis = dedalus_chat(CONDUCTOR_SYSTEM_PROMPT, synth_prompt)
         synth_ms = round((time.perf_counter() - t0) * 1000)
 
-        cot("ConductorAgent", "SYNTHESIS_COMPLETE",
-            f"Generated narrative in {synth_ms}ms")
-
     timeline.append({
         "agent": "ConductorAgent",
         "tool": "synthesize_narrative",
@@ -209,15 +186,11 @@ def orchestrate(request):
 
     total_ms = round((time.perf_counter() - t_start) * 1000)
 
-    cot("ConductorAgent", "COMPLETE",
-        f"Total orchestration: {total_ms}ms")
-
     return JsonResponse({
         "archivist": results.get("archivist"),
         "linguist": results.get("linguist"),
         "stylist": results.get("stylist"),
         "synthesis": synthesis,
         "timeline": timeline,
-        "chain_of_thought": chain_of_thought,
         "total_ms": total_ms,
     })

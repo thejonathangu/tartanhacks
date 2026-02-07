@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "corsheaders",
     "archivist",
+    "librarian",
     "linguist",
     "stylist",
 ]
