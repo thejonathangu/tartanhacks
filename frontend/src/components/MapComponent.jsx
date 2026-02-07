@@ -39,6 +39,7 @@ export default function MapComponent({
   popupContent,
   filterEra,
   stylistOverrides,
+  flyToLandmark,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -53,6 +54,21 @@ export default function MapComponent({
   useEffect(() => {
     filterEraRef.current = filterEra;
   }, [filterEra]);
+
+  // ── Fly to landmark when Vibe Search result is clicked ──────
+  useEffect(() => {
+    if (!flyToLandmark || !mapRef.current) return;
+    const coords = flyToLandmark.geometry?.coordinates;
+    if (!coords) return;
+    mapRef.current.flyTo({
+      center: coords,
+      zoom: 15,
+      pitch: 50,
+      bearing: -20,
+      duration: 2400,
+      essential: true,
+    });
+  }, [flyToLandmark]);
 
   if (!MAPBOX_TOKEN) {
     return (
