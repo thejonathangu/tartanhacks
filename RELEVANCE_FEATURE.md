@@ -8,18 +8,19 @@ Each extracted location now includes a **relevance score (1-10)** that appears a
 
 ## 📊 Relevance Scale
 
-| Score | Meaning | Example |
-|-------|---------|---------|
-| **10** | Central to plot, major scene, protagonist's home | Gatsby's mansion in *The Great Gatsby* |
-| **7-9** | Significant location, important events | Tom & Daisy's house, Plaza Hotel |
-| **4-6** | Supporting location, multiple mentions | Wilson's garage, Valley of Ashes |
-| **1-3** | Minor mention, background detail | A passing street reference |
+| Score   | Meaning                                          | Example                                |
+| ------- | ------------------------------------------------ | -------------------------------------- |
+| **10**  | Central to plot, major scene, protagonist's home | Gatsby's mansion in _The Great Gatsby_ |
+| **7-9** | Significant location, important events           | Tom & Daisy's house, Plaza Hotel       |
+| **4-6** | Supporting location, multiple mentions           | Wilson's garage, Valley of Ashes       |
+| **1-3** | Minor mention, background detail                 | A passing street reference             |
 
 ---
 
 ## 🎨 Visual Design
 
 ### On the Map:
+
 - **White number** displayed **inside** each circular marker
 - **Bold font** for visibility
 - **Always visible** (not dependent on zoom level)
@@ -27,6 +28,7 @@ Each extracted location now includes a **relevance score (1-10)** that appears a
 - **Uploaded PDF locations**: Purple circles + white number
 
 ### Example Visual:
+
 ```
    ┌──────┐
    │  10  │  ← White number on colored/purple circle
@@ -40,11 +42,13 @@ Each extracted location now includes a **relevance score (1-10)** that appears a
 ### Backend Changes
 
 #### 1. PDF Processor (`pdf_processor.py`)
+
 - Updated `LOCATION_EXTRACTION_PROMPT` to request relevance scoring
 - Added scoring criteria to prompt
 - Modified `locations_to_geojson()` to include `relevance` property (defaults to 5)
 
 #### 2. Title Extractor (`title_extractor.py`)
+
 - Updated `TITLE_EXTRACTION_PROMPT` with same relevance criteria
 - Ensures consistency between PDF upload and title search pathways
 
@@ -53,10 +57,12 @@ Each extracted location now includes a **relevance score (1-10)** that appears a
 #### MapComponent.jsx
 
 **New Layers Added:**
+
 1. `literary-relevance` - Shows numbers on curated locations
 2. `uploaded-relevance` - Shows numbers on user-uploaded locations
 
 **Layer Stack (bottom to top):**
+
 ```
 1. literary-glow (faint halo)
 2. literary-markers (colored circles)
@@ -66,8 +72,9 @@ Each extracted location now includes a **relevance score (1-10)** that appears a
 
 **Filter Updates:**
 All filter operations now include relevance layers:
+
 - Era filtering
-- Year range filtering  
+- Year range filtering
 - Style switching
 
 ---
@@ -79,6 +86,7 @@ The AI is instructed to score based on **narrative importance**, not frequency:
 > "Assign relevance scores based on narrative importance, not just frequency of mention"
 
 ### Scoring Criteria:
+
 - **Plot centrality**: Does the climax happen here?
 - **Character significance**: Is this the protagonist's home?
 - **Emotional weight**: Are major decisions/revelations made here?
@@ -87,6 +95,7 @@ The AI is instructed to score based on **narrative importance**, not frequency:
 ### Examples:
 
 **The Great Gatsby:**
+
 - Gatsby's mansion (West Egg) → **10** (central to entire plot)
 - Plaza Hotel → **9** (climactic confrontation scene)
 - Tom & Daisy's house → **8** (significant recurring location)
@@ -94,6 +103,7 @@ The AI is instructed to score based on **narrative importance**, not frequency:
 - A random NYC street → **2** (passing mention)
 
 **All the Light We Cannot See:**
+
 - Saint-Malo → **10** (primary setting, siege, climax)
 - Werner's orphanage → **8** (shapes his character)
 - Von Rumpel's Paris apartment → **5** (antagonist's base)
@@ -157,11 +167,13 @@ The AI is instructed to score based on **narrative importance**, not frequency:
 ### To Test Locally:
 
 1. **Upload a PDF**:
+
    - Go to `http://localhost:3000`
    - Upload any literature PDF
    - Check that markers show white numbers 1-10
 
 2. **Search by Title**:
+
    - Search for "The Great Gatsby"
    - Locations should appear with relevance scores
    - Gatsby's mansion should have 10, Plaza Hotel ~9

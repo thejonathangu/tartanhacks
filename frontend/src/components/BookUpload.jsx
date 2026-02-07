@@ -65,29 +65,47 @@ export default function BookUpload({ onLocationsExtracted }) {
   };
 
   return (
-    <div style={{
-      padding: "12px 20px", borderBottom: "1px solid #1e2235",
-    }}>
-      <p style={{
-        fontSize: "10px", color: "#555", margin: "0 0 8px",
-        textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: 600,
-      }}>
+    <div
+      style={{
+        padding: "12px 20px",
+        borderBottom: "1px solid #1e2235",
+      }}
+    >
+      <p
+        style={{
+          fontSize: "10px",
+          color: "#555",
+          margin: "0 0 8px",
+          textTransform: "uppercase",
+          letterSpacing: "1.5px",
+          fontWeight: 600,
+        }}
+      >
         📖 Upload a Book PDF
       </p>
 
       {/* Drop zone */}
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
         style={{
-          border: `2px dashed ${dragOver ? "#4ecdc4" : file ? "#4caf50" : "#252840"}`,
+          border: `2px dashed ${
+            dragOver ? "#4ecdc4" : file ? "#4caf50" : "#252840"
+          }`,
           borderRadius: "8px",
           padding: file ? "10px 12px" : "20px 12px",
           textAlign: "center",
           cursor: "pointer",
-          background: dragOver ? "rgba(78,205,196,0.05)" : file ? "rgba(76,175,80,0.05)" : "#0d0f1a",
+          background: dragOver
+            ? "rgba(78,205,196,0.05)"
+            : file
+            ? "rgba(76,175,80,0.05)"
+            : "#0d0f1a",
           transition: "all 0.2s",
           marginBottom: "8px",
         }}
@@ -103,7 +121,14 @@ export default function BookUpload({ onLocationsExtracted }) {
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "18px" }}>📄</span>
             <div style={{ flex: 1, textAlign: "left" }}>
-              <p style={{ margin: 0, fontSize: "12px", color: "#ddd", fontWeight: 600 }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "12px",
+                  color: "#ddd",
+                  fontWeight: 600,
+                }}
+              >
                 {file.name}
               </p>
               <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#666" }}>
@@ -111,10 +136,17 @@ export default function BookUpload({ onLocationsExtracted }) {
               </p>
             </div>
             <button
-              onClick={(e) => { e.stopPropagation(); handleClear(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClear();
+              }}
               style={{
-                background: "none", border: "none", color: "#666",
-                cursor: "pointer", fontSize: "14px", padding: "4px",
+                background: "none",
+                border: "none",
+                color: "#666",
+                cursor: "pointer",
+                fontSize: "14px",
+                padding: "4px",
               }}
             >
               ✕
@@ -122,9 +154,20 @@ export default function BookUpload({ onLocationsExtracted }) {
           </div>
         ) : (
           <>
-            <span style={{ fontSize: "28px", display: "block", marginBottom: "4px" }}>📤</span>
+            <span
+              style={{
+                fontSize: "28px",
+                display: "block",
+                marginBottom: "4px",
+              }}
+            >
+              📤
+            </span>
             <p style={{ margin: 0, fontSize: "12px", color: "#888" }}>
-              Drop a PDF here or <span style={{ color: "#4ecdc4", textDecoration: "underline" }}>browse</span>
+              Drop a PDF here or{" "}
+              <span style={{ color: "#4ecdc4", textDecoration: "underline" }}>
+                browse
+              </span>
             </p>
             <p style={{ margin: "4px 0 0", fontSize: "10px", color: "#555" }}>
               Extracts locations via AI
@@ -140,10 +183,17 @@ export default function BookUpload({ onLocationsExtracted }) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Book title (optional)"
           style={{
-            width: "100%", background: "#1a1d2e", border: "1px solid #252840",
-            borderRadius: "8px", padding: "8px 12px", color: "#ddd",
-            fontSize: "12px", outline: "none", fontFamily: "system-ui, sans-serif",
-            marginBottom: "8px", boxSizing: "border-box",
+            width: "100%",
+            background: "#1a1d2e",
+            border: "1px solid #252840",
+            borderRadius: "8px",
+            padding: "8px 12px",
+            color: "#ddd",
+            fontSize: "12px",
+            outline: "none",
+            fontFamily: "system-ui, sans-serif",
+            marginBottom: "8px",
+            boxSizing: "border-box",
           }}
         />
       )}
@@ -158,16 +208,30 @@ export default function BookUpload({ onLocationsExtracted }) {
             background: uploading
               ? "#1a1d2e"
               : "linear-gradient(135deg, #4ecdc4, #44a8a0)",
-            border: "none", borderRadius: "8px", padding: "10px",
+            border: "none",
+            borderRadius: "8px",
+            padding: "10px",
             color: uploading ? "#888" : "#000",
             cursor: uploading ? "wait" : "pointer",
-            fontSize: "12px", fontWeight: 700, transition: "all 0.2s",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+            fontSize: "12px",
+            fontWeight: 700,
+            transition: "all 0.2s",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
           }}
         >
           {uploading ? (
             <>
-              <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⏳</span>
+              <span
+                style={{
+                  animation: "spin 1s linear infinite",
+                  display: "inline-block",
+                }}
+              >
+                ⏳
+              </span>
               Extracting locations...
             </>
           ) : (
@@ -178,10 +242,15 @@ export default function BookUpload({ onLocationsExtracted }) {
 
       {/* Error */}
       {error && (
-        <div style={{
-          background: "rgba(255,107,107,0.1)", border: "1px solid #ff6b6b33",
-          borderRadius: "6px", padding: "8px 10px", marginTop: "8px",
-        }}>
+        <div
+          style={{
+            background: "rgba(255,107,107,0.1)",
+            border: "1px solid #ff6b6b33",
+            borderRadius: "6px",
+            padding: "8px 10px",
+            marginTop: "8px",
+          }}
+        >
           <p style={{ margin: 0, fontSize: "11px", color: "#ff6b6b" }}>
             ⚠ {error}
           </p>
@@ -190,61 +259,90 @@ export default function BookUpload({ onLocationsExtracted }) {
 
       {/* Success result */}
       {result && !error && (
-        <div style={{
-          background: "rgba(76,175,80,0.1)", border: "1px solid #4caf5033",
-          borderRadius: "6px", padding: "10px", marginTop: "8px",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+        <div
+          style={{
+            background: "rgba(76,175,80,0.1)",
+            border: "1px solid #4caf5033",
+            borderRadius: "6px",
+            padding: "10px",
+            marginTop: "8px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              marginBottom: "6px",
+            }}
+          >
             <span style={{ fontSize: "14px" }}>✅</span>
-            <span style={{ fontSize: "12px", color: "#4caf50", fontWeight: 700 }}>
-              {result.locations_found} location{result.locations_found !== 1 ? "s" : ""} found
+            <span
+              style={{ fontSize: "12px", color: "#4caf50", fontWeight: 700 }}
+            >
+              {result.locations_found} location
+              {result.locations_found !== 1 ? "s" : ""} found
             </span>
           </div>
           {[...(result.geojson?.features || [])]
-            .sort((a, b) => (a.properties.rank || 999) - (b.properties.rank || 999))
+            .sort(
+              (a, b) => (a.properties.rank || 999) - (b.properties.rank || 999)
+            )
             .map((f, i) => (
-            <div key={i} style={{
-              background: "#0d0f1a", borderRadius: "4px",
-              padding: "8px 10px", marginBottom: "4px",
-              fontSize: "11px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}>
-              <span style={{
-                fontSize: "12px",
-                fontWeight: 700,
-                minWidth: "22px",
-                height: "22px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#4ecdc433",
-                color: "#4ecdc4",
-                borderRadius: "5px",
-                flexShrink: 0,
-              }}>
-                {f.properties.rank || "?"}
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ color: "#4ecdc4", fontWeight: 600 }}>
-                  {f.properties.title}
+              <div
+                key={i}
+                style={{
+                  background: "#0d0f1a",
+                  borderRadius: "4px",
+                  padding: "8px 10px",
+                  marginBottom: "4px",
+                  fontSize: "11px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    minWidth: "22px",
+                    height: "22px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "#4ecdc433",
+                    color: "#4ecdc4",
+                    borderRadius: "5px",
+                    flexShrink: 0,
+                  }}
+                >
+                  {f.properties.rank || "?"}
                 </span>
-                {f.properties.era && (
-                  <span style={{ color: "#555", marginLeft: "6px" }}>
-                    {f.properties.era}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ color: "#4ecdc4", fontWeight: 600 }}>
+                    {f.properties.title}
                   </span>
-                )}
+                  {f.properties.era && (
+                    <span style={{ color: "#555", marginLeft: "6px" }}>
+                      {f.properties.era}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
           <button
             onClick={handleClear}
             style={{
-              width: "100%", marginTop: "6px",
-              background: "transparent", border: "1px solid #252840",
-              borderRadius: "6px", padding: "6px",
-              color: "#888", cursor: "pointer", fontSize: "11px",
+              width: "100%",
+              marginTop: "6px",
+              background: "transparent",
+              border: "1px solid #252840",
+              borderRadius: "6px",
+              padding: "6px",
+              color: "#888",
+              cursor: "pointer",
+              fontSize: "11px",
             }}
           >
             Upload another book

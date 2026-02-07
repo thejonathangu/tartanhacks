@@ -85,7 +85,7 @@ export default function BookSearch({
       const data = await fetchLocationsFromTitle(
         book.title,
         book.authors?.join(", ") || "",
-        book.first_publish_year ? String(book.first_publish_year) : "",
+        book.first_publish_year ? String(book.first_publish_year) : ""
       );
       if (data.geojson && data.geojson.features.length > 0) {
         if (onLocationsExtracted) onLocationsExtracted(data.geojson);
@@ -229,8 +229,8 @@ export default function BookSearch({
             fontWeight: 600,
           }}
         >
-          📍 {sortedFeatures.length} location{sortedFeatures.length !== 1 ? "s" : ""}{" "}
-          extracted
+          📍 {sortedFeatures.length} location
+          {sortedFeatures.length !== 1 ? "s" : ""} extracted
         </p>
 
         {/* Locations list */}
