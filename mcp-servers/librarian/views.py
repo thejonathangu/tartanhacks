@@ -88,6 +88,20 @@ def search(request):
         return JsonResponse({"error": "query is required"}, status=400)
 
     limit = body.get("limit", 10)
+    
+    # Validate limit is an integer
+    if not isinstance(limit, int):
+        return JsonResponse(
+            {"error": "limit must be an integer"}, 
+            status=400
+        )
+    
+    # Validate limit is within reasonable bounds
+    if limit < 1 or limit > 100:
+        return JsonResponse(
+            {"error": "limit must be between 1 and 100"}, 
+            status=400
+        )
 
     try:
         result = _librarian_search(query, limit=limit)
