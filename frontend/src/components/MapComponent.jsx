@@ -212,20 +212,31 @@ export default function MapComponent({
       }
       [
         "literary-markers",
-        "literary-glow",
-        "literary-labels",
+        "literary-glow",        "literary-labels",
         "route-lines",
       ].forEach((id) => {
+        if (map.getLayer(id)) map.setFilter(id, filter);
+      });
+      // Also filter uploaded layers
+      ["uploaded-markers", "uploaded-labels"].forEach((id) => {
         if (map.getLayer(id)) map.setFilter(id, filter);
       });
     });
 
     mapRef.current = map;
-    return () => map.remove();
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      isFirstStyleRender.current = true;
+    };
   }, []);
-
-  // ── Style switching ──
+  // ── Style switching (skip first render — constructor already set the style) ──
+  const isFirstStyleRender = useRef(true);
   useEffect(() => {
+    if (isFirstStyleRender.current) {
+      isFirstStyleRender.current = false;
+      return;
+    }
     if (!mapRef.current) return;
     styleLoadedRef.current = false;
     mapRef.current.setStyle(MAP_STYLES[activeStyle]);
