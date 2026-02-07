@@ -21,6 +21,9 @@ frontend/vite.config.js
 *.swp
 *.swo
 
+# Scripts
+restart.sh
+
 # OS
 .DS_Store
 Thumbs.db
