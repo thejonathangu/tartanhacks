@@ -50,11 +50,11 @@ This project demonstrates **agentic task delegation** using the Model Context Pr
 
 ### The Three Specialist MCP Servers
 
-| Agent | Tool | Role | What It Does |
-|-------|------|------|--------------|
-| 🏛 **ArchivistAgent** | `get_historical_context` | Data & Facts | Retrieves verified quotes, historical context, and dialect notes from a curated knowledge base, then enriches with AI deep-dive |
-| 🗣 **LinguistAgent** | `analyze_period_dialect` | Cultural Analysis | Identifies era-specific slang and linguistic patterns (e.g., 1920s Harlem jive, 1940s Cantonese-English code-switching) |
-| 🎨 **StylistAgent** | `generate_map_style` | Visual Design | Generates Mapbox Style JSON overrides and color palettes to change the map's visual "vibe" per era |
+| Agent                 | Tool                     | Role              | What It Does                                                                                                                    |
+| --------------------- | ------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 🏛 **ArchivistAgent** | `get_historical_context` | Data & Facts      | Retrieves verified quotes, historical context, and dialect notes from a curated knowledge base, then enriches with AI deep-dive |
+| 🗣 **LinguistAgent**  | `analyze_period_dialect` | Cultural Analysis | Identifies era-specific slang and linguistic patterns (e.g., 1920s Harlem jive, 1940s Cantonese-English code-switching)         |
+| 🎨 **StylistAgent**   | `generate_map_style`     | Visual Design     | Generates Mapbox Style JSON overrides and color palettes to change the map's visual "vibe" per era                              |
 
 ### The Delegation Workflow
 
@@ -70,15 +70,18 @@ This project demonstrates **agentic task delegation** using the Model Context Pr
 ## 📍 Featured Landmarks
 
 ### 🚢 1940s — Post-War Immigration (The Joy Luck Club)
+
 - San Francisco Immigration Landing
 - Chinatown — Grant Avenue
 
 ### 🎷 1920s — Harlem Renaissance
+
 - The Cotton Club
 - The Apollo Theater
 - Cathedral of St. John the Divine
 
 ### ✊ 1960s — Civil Rights Movement
+
 - Montgomery Bus Boycott
 - Birmingham — 16th Street Baptist Church
 - Lincoln Memorial — "I Have a Dream"
@@ -103,11 +106,13 @@ cd dist && python3 -m http.server 3000 --bind 0.0.0.0
 ### Environment Variables
 
 **`mcp-servers/.env`**
+
 ```
 DEDALUS_API_KEY=dsk-live-...
 ```
 
 **`frontend/.env`**
+
 ```
 VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1...
 VITE_MCP_BASE_URL=http://localhost:8000
@@ -115,14 +120,14 @@ VITE_MCP_BASE_URL=http://localhost:8000
 
 ## 🛠 Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18 + Vite 5 + Mapbox GL JS 3.3 |
-| Map Tiles | Mapbox (Satellite, Dark, Streets, Light) |
-| Street View | Google Static Street View API |
-| Backend | Django 5.1 (Python) |
-| AI Provider | Dedalus Labs (OpenAI-compatible, GPT-4o) |
-| Protocol | Model Context Protocol (MCP) |
+| Layer         | Technology                                      |
+| ------------- | ----------------------------------------------- |
+| Frontend      | React 18 + Vite 5 + Mapbox GL JS 3.3            |
+| Map Tiles     | Mapbox (Satellite, Dark, Streets, Light)        |
+| Street View   | Google Static Street View API                   |
+| Backend       | Django 5.1 (Python)                             |
+| AI Provider   | Dedalus Labs (OpenAI-compatible, GPT-4o)        |
+| Protocol      | Model Context Protocol (MCP)                    |
 | Orchestration | ConductorAgent with parallel ThreadPoolExecutor |
 
 ## 🏆 Why This Wins

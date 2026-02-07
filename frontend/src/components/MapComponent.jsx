@@ -34,7 +34,12 @@ function buildRouteLines() {
 
 const routeGeoJSON = buildRouteLines();
 
-export default function MapComponent({ onMarkerClick, popupContent, filterEra, stylistOverrides }) {
+export default function MapComponent({
+  onMarkerClick,
+  popupContent,
+  filterEra,
+  stylistOverrides,
+}) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const popupRef = useRef(null);
@@ -42,19 +47,40 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
   const filterEraRef = useRef(filterEra);
   const [activeStyle, setActiveStyle] = useState("Satellite");
 
-  useEffect(() => { onMarkerClickRef.current = onMarkerClick; }, [onMarkerClick]);
-  useEffect(() => { filterEraRef.current = filterEra; }, [filterEra]);
+  useEffect(() => {
+    onMarkerClickRef.current = onMarkerClick;
+  }, [onMarkerClick]);
+  useEffect(() => {
+    filterEraRef.current = filterEra;
+  }, [filterEra]);
 
   if (!MAPBOX_TOKEN) {
     return (
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "center",
-        width: "100%", height: "100%", background: "#0d0d0d", color: "#fff",
-        fontFamily: "system-ui, sans-serif", flexDirection: "column", gap: "16px",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+          height: "100%",
+          background: "#0d0d0d",
+          color: "#fff",
+          fontFamily: "system-ui, sans-serif",
+          flexDirection: "column",
+          gap: "16px",
+        }}
+      >
         <h1 style={{ fontSize: "48px", margin: 0 }}>🗺️</h1>
         <h2 style={{ margin: 0 }}>Mapbox token not set</h2>
-        <pre style={{ background: "#1a1a2e", padding: "12px 20px", borderRadius: "8px", color: "#4ecdc4", fontSize: "13px" }}>
+        <pre
+          style={{
+            background: "#1a1a2e",
+            padding: "12px 20px",
+            borderRadius: "8px",
+            color: "#4ecdc4",
+            fontSize: "13px",
+          }}
+        >
           {`VITE_MAPBOX_ACCESS_TOKEN=pk.your_token_here`}
         </pre>
       </div>
@@ -90,8 +116,15 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
         source: "route-lines",
         paint: {
           "line-color": [
-            "match", ["get", "era"],
-            "1940s", "#e6b800", "1920s", "#ff6b6b", "1960s", "#4ecdc4", "#888",
+            "match",
+            ["get", "era"],
+            "1940s",
+            "#e6b800",
+            "1920s",
+            "#ff6b6b",
+            "1960s",
+            "#4ecdc4",
+            "#888",
           ],
           "line-width": 2,
           "line-opacity": 0.4,
@@ -101,7 +134,10 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
       });
 
       // ── Point layers ──
-      m.addSource("literary-points", { type: "geojson", data: literaryGeoJSON });
+      m.addSource("literary-points", {
+        type: "geojson",
+        data: literaryGeoJSON,
+      });
 
       m.addLayer({
         id: "literary-glow",
@@ -110,8 +146,15 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
         paint: {
           "circle-radius": 20,
           "circle-color": [
-            "match", ["get", "era"],
-            "1940s", "#e6b800", "1920s", "#ff6b6b", "1960s", "#4ecdc4", "#fff",
+            "match",
+            ["get", "era"],
+            "1940s",
+            "#e6b800",
+            "1920s",
+            "#ff6b6b",
+            "1960s",
+            "#4ecdc4",
+            "#fff",
           ],
           "circle-opacity": 0.12,
           "circle-stroke-width": 0,
@@ -125,8 +168,15 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
         paint: {
           "circle-radius": 8,
           "circle-color": [
-            "match", ["get", "era"],
-            "1940s", "#e6b800", "1920s", "#ff6b6b", "1960s", "#4ecdc4", "#fff",
+            "match",
+            ["get", "era"],
+            "1940s",
+            "#e6b800",
+            "1920s",
+            "#ff6b6b",
+            "1960s",
+            "#4ecdc4",
+            "#fff",
           ],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
@@ -157,8 +207,12 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
         m.flyTo({ center: coords, zoom: 14, speed: 1.2, pitch: 45 });
         if (onMarkerClickRef.current) onMarkerClickRef.current(feature);
       });
-      m.on("mouseenter", "literary-markers", () => { m.getCanvas().style.cursor = "pointer"; });
-      m.on("mouseleave", "literary-markers", () => { m.getCanvas().style.cursor = ""; });
+      m.on("mouseenter", "literary-markers", () => {
+        m.getCanvas().style.cursor = "pointer";
+      });
+      m.on("mouseleave", "literary-markers", () => {
+        m.getCanvas().style.cursor = "";
+      });
     }
 
     map.on("load", () => addAllLayers(map));
@@ -166,7 +220,12 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
       addAllLayers(map);
       const era = filterEraRef.current;
       const filter = era ? ["==", ["get", "era"], era] : null;
-      ["literary-markers", "literary-glow", "literary-labels", "route-lines"].forEach((id) => {
+      [
+        "literary-markers",
+        "literary-glow",
+        "literary-labels",
+        "route-lines",
+      ].forEach((id) => {
         if (map.getLayer(id)) map.setFilter(id, filter);
       });
     });
@@ -187,14 +246,19 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
     if (!map || !map.isStyleLoaded()) return;
 
     const filter = filterEra ? ["==", ["get", "era"], filterEra] : null;
-    ["literary-markers", "literary-glow", "literary-labels", "route-lines"].forEach((id) => {
+    [
+      "literary-markers",
+      "literary-glow",
+      "literary-labels",
+      "route-lines",
+    ].forEach((id) => {
       if (map.getLayer(id)) map.setFilter(id, filter);
     });
 
     // Fly to era bounding box
     if (filterEra) {
       const eraFeatures = literaryGeoJSON.features.filter(
-        (f) => f.properties.era === filterEra
+        (f) => f.properties.era === filterEra,
       );
       if (eraFeatures.length > 0) {
         const bounds = new mapboxgl.LngLatBounds();
@@ -213,10 +277,30 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
     if (!po) return;
 
     if (map.getLayer("literary-markers")) {
-      if (po["circle-color"]) map.setPaintProperty("literary-markers", "circle-color", po["circle-color"]);
-      if (po["circle-radius"]) map.setPaintProperty("literary-markers", "circle-radius", po["circle-radius"]);
-      if (po["circle-stroke-color"]) map.setPaintProperty("literary-markers", "circle-stroke-color", po["circle-stroke-color"]);
-      if (po["circle-stroke-width"]) map.setPaintProperty("literary-markers", "circle-stroke-width", po["circle-stroke-width"]);
+      if (po["circle-color"])
+        map.setPaintProperty(
+          "literary-markers",
+          "circle-color",
+          po["circle-color"],
+        );
+      if (po["circle-radius"])
+        map.setPaintProperty(
+          "literary-markers",
+          "circle-radius",
+          po["circle-radius"],
+        );
+      if (po["circle-stroke-color"])
+        map.setPaintProperty(
+          "literary-markers",
+          "circle-stroke-color",
+          po["circle-stroke-color"],
+        );
+      if (po["circle-stroke-width"])
+        map.setPaintProperty(
+          "literary-markers",
+          "circle-stroke-width",
+          po["circle-stroke-width"],
+        );
     }
   }, [stylistOverrides]);
 
@@ -229,8 +313,12 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
     const coords = geometry.coordinates;
     const [lng, lat] = coords;
 
-    const accentColor = properties.era === "1940s" ? "#e6b800"
-      : properties.era === "1920s" ? "#ff6b6b" : "#4ecdc4";
+    const accentColor =
+      properties.era === "1940s"
+        ? "#e6b800"
+        : properties.era === "1920s"
+          ? "#ff6b6b"
+          : "#4ecdc4";
 
     const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lng}&fov=90&heading=235&pitch=10&key=${GOOGLE_API_KEY}`;
 
@@ -251,15 +339,22 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
           font-style:italic;font-size:12px;color:#444;line-height:1.5;">
           "${properties.quote}"
         </blockquote>
-        ${deepContext?.historical_context ? `
+        ${
+          deepContext?.historical_context
+            ? `
           <p style="font-size:11px;color:#555;margin:0;line-height:1.4;">
             <strong style="color:${accentColor};">🏛</strong> ${deepContext.historical_context}
           </p>
-        ` : `<p style="font-size:11px;color:#999;margin:0;">Click explores this via MCP agents →</p>`}
+        `
+            : `<p style="font-size:11px;color:#999;margin:0;">Click explores this via MCP agents →</p>`
+        }
       </div>
     `;
 
-    popupRef.current = new mapboxgl.Popup({ closeOnClick: true, maxWidth: "340px" })
+    popupRef.current = new mapboxgl.Popup({
+      closeOnClick: true,
+      maxWidth: "340px",
+    })
       .setLngLat(coords)
       .setHTML(html)
       .addTo(mapRef.current);
@@ -270,21 +365,38 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
       <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
 
       {/* Style switcher */}
-      <div style={{
-        position: "absolute", top: "10px", right: "50px", zIndex: 10,
-        display: "flex", gap: "3px", background: "rgba(13,15,26,0.9)",
-        borderRadius: "8px", padding: "3px", backdropFilter: "blur(8px)",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
-      }}>
+      <div
+        style={{
+          position: "absolute",
+          top: "10px",
+          right: "50px",
+          zIndex: 10,
+          display: "flex",
+          gap: "3px",
+          background: "rgba(13,15,26,0.9)",
+          borderRadius: "8px",
+          padding: "3px",
+          backdropFilter: "blur(8px)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
+        }}
+      >
         {Object.keys(MAP_STYLES).map((name) => (
-          <button key={name} onClick={() => setActiveStyle(name)} style={{
-            background: activeStyle === name ? "#4ecdc4" : "transparent",
-            color: activeStyle === name ? "#000" : "#aaa",
-            border: "none", borderRadius: "5px",
-            padding: "5px 10px", cursor: "pointer",
-            fontSize: "11px", fontWeight: activeStyle === name ? 700 : 400,
-            fontFamily: "system-ui, sans-serif", transition: "all 0.2s",
-          }}>
+          <button
+            key={name}
+            onClick={() => setActiveStyle(name)}
+            style={{
+              background: activeStyle === name ? "#4ecdc4" : "transparent",
+              color: activeStyle === name ? "#000" : "#aaa",
+              border: "none",
+              borderRadius: "5px",
+              padding: "5px 10px",
+              cursor: "pointer",
+              fontSize: "11px",
+              fontWeight: activeStyle === name ? 700 : 400,
+              fontFamily: "system-ui, sans-serif",
+              transition: "all 0.2s",
+            }}
+          >
             {name}
           </button>
         ))}
@@ -293,16 +405,30 @@ export default function MapComponent({ onMarkerClick, popupContent, filterEra, s
       {/* Reset view */}
       <button
         onClick={() => {
-          if (mapRef.current) mapRef.current.flyTo({ center: [-95.7, 37.0], zoom: 3.5, speed: 1.2, pitch: 15 });
+          if (mapRef.current)
+            mapRef.current.flyTo({
+              center: [-95.7, 37.0],
+              zoom: 3.5,
+              speed: 1.2,
+              pitch: 15,
+            });
           if (popupRef.current) popupRef.current.remove();
         }}
         style={{
-          position: "absolute", bottom: "30px", right: "10px", zIndex: 10,
-          background: "rgba(13,15,26,0.9)", color: "#fff",
-          border: "1px solid #2a2d3e", borderRadius: "6px",
-          padding: "8px 14px", cursor: "pointer",
-          fontSize: "12px", fontFamily: "system-ui, sans-serif",
-          backdropFilter: "blur(8px)", boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+          position: "absolute",
+          bottom: "30px",
+          right: "10px",
+          zIndex: 10,
+          background: "rgba(13,15,26,0.9)",
+          color: "#fff",
+          border: "1px solid #2a2d3e",
+          borderRadius: "6px",
+          padding: "8px 14px",
+          cursor: "pointer",
+          fontSize: "12px",
+          fontFamily: "system-ui, sans-serif",
+          backdropFilter: "blur(8px)",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
         }}
       >
         🗺️ Reset
