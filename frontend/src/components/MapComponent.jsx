@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
+import DOMPurify from "dompurify";
 import { literaryGeoJSON } from "../data/literaryPoints";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || "";
@@ -11,6 +12,13 @@ const MAP_STYLES = {
   Streets: "mapbox://styles/mapbox/streets-v12",
   Light: "mapbox://styles/mapbox/light-v11",
 };
+
+// Helper function to escape HTML and prevent XSS attacks
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
 
 // Group features by era to draw connecting route lines
 function buildRouteLines() {
@@ -385,6 +393,16 @@ export default function MapComponent({
 
     const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lng}&fov=90&heading=235&pitch=10&key=${GOOGLE_API_KEY}`;
 
+    // Sanitize all user-controlled data to prevent XSS attacks
+    const sanitizedEra = escapeHtml(properties.era || "");
+    const sanitizedTitle = escapeHtml(properties.title || "");
+    const sanitizedBook = escapeHtml(properties.book || "");
+    const sanitizedYear = escapeHtml(properties.year || "");
+    const sanitizedQuote = escapeHtml(properties.quote || "");
+    const sanitizedHistoricalContext = deepContext?.historical_context 
+      ? escapeHtml(deepContext.historical_context)
+      : "";
+
     const html = `
       <div style="max-width:320px;font-family:system-ui,sans-serif;color:#1a1a2e;">
         <div style="position:relative;margin:-10px -10px 8px -10px;overflow:hidden;border-radius:8px 8px 0 0;">
@@ -393,20 +411,20 @@ export default function MapComponent({
             onerror="this.parentElement.style.display='none'" />
           <div style="position:absolute;top:8px;right:8px;background:${accentColor};
             padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;color:#000;">
-            ${properties.era}
+            ${sanitizedEra}
           </div>
         </div>
-        <h3 style="margin:0 0 4px;font-size:14px;">${properties.title}</h3>
-        <p style="color:#888;margin:0 0 8px;font-size:11px;">${properties.book} · ${properties.year}</p>
+        <h3 style="margin:0 0 4px;font-size:14px;">${sanitizedTitle}</h3>
+        <p style="color:#888;margin:0 0 8px;font-size:11px;">${sanitizedBook} · ${sanitizedYear}</p>
         <blockquote style="border-left:3px solid ${accentColor};padding-left:8px;margin:0 0 8px;
           font-style:italic;font-size:12px;color:#444;line-height:1.5;">
-          "${properties.quote}"
+          "${sanitizedQuote}"
         </blockquote>
         ${
-          deepContext?.historical_context
+          sanitizedHistoricalContext
             ? `
           <p style="font-size:11px;color:#555;margin:0;line-height:1.4;">
-            <strong style="color:${accentColor};">🏛</strong> ${deepContext.historical_context}
+            <strong style="color:${accentColor};">🏛</strong> ${sanitizedHistoricalContext}
           </p>
         `
             : `<p style="font-size:11px;color:#999;margin:0;">Click explores this via MCP agents →</p>`
@@ -414,12 +432,15 @@ export default function MapComponent({
       </div>
     `;
 
+    // Use DOMPurify to sanitize the entire HTML string as an additional layer of protection
+    const cleanHtml = DOMPurify.sanitize(html);
+
     popupRef.current = new mapboxgl.Popup({
       closeOnClick: true,
       maxWidth: "340px",
     })
       .setLngLat(coords)
-      .setHTML(html)
+      .setHTML(cleanHtml)
       .addTo(mapRef.current);
   }, [popupContent]);
 
