@@ -74,7 +74,7 @@ export default function BookUpload({ onLocationsExtracted, onLocationClick }) {
       <p
         style={{
           fontSize: "10px",
-          color: "#555",
+          color: "#999",
           margin: "0 0 8px",
           textTransform: "uppercase",
           letterSpacing: "1.5px",
@@ -131,7 +131,7 @@ export default function BookUpload({ onLocationsExtracted, onLocationClick }) {
               >
                 {file.name}
               </p>
-              <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#666" }}>
+              <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#999" }}>
                 {(file.size / 1024 / 1024).toFixed(1)} MB
               </p>
             </div>
@@ -143,7 +143,7 @@ export default function BookUpload({ onLocationsExtracted, onLocationClick }) {
               style={{
                 background: "none",
                 border: "none",
-                color: "#666",
+                color: "#999",
                 cursor: "pointer",
                 fontSize: "14px",
                 padding: "4px",
@@ -163,13 +163,13 @@ export default function BookUpload({ onLocationsExtracted, onLocationClick }) {
             >
               📤
             </span>
-            <p style={{ margin: 0, fontSize: "12px", color: "#888" }}>
+            <p style={{ margin: 0, fontSize: "12px", color: "#bbb" }}>
               Drop a PDF here or{" "}
               <span style={{ color: "#4ecdc4", textDecoration: "underline" }}>
                 browse
               </span>
             </p>
-            <p style={{ margin: "4px 0 0", fontSize: "10px", color: "#555" }}>
+            <p style={{ margin: "4px 0 0", fontSize: "10px", color: "#999" }}>
               Extracts locations via AI
             </p>
           </>
@@ -340,7 +340,7 @@ export default function BookUpload({ onLocationsExtracted, onLocationClick }) {
                     {f.properties.title}
                   </span>
                   {f.properties.era && (
-                    <span style={{ color: "#555", marginLeft: "6px" }}>
+                    <span style={{ color: "#999", marginLeft: "6px" }}>
                       {f.properties.era}
                     </span>
                   )}
@@ -356,7 +356,7 @@ export default function BookUpload({ onLocationsExtracted, onLocationClick }) {
               border: "1px solid #252840",
               borderRadius: "6px",
               padding: "6px",
-              color: "#888",
+              color: "#bbb",
               cursor: "pointer",
               fontSize: "11px",
             }}

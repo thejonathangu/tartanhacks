@@ -222,7 +222,7 @@ export default function BookSearch({
         <p
           style={{
             fontSize: "10px",
-            color: "#666",
+            color: "#999",
             margin: "0 0 8px",
             textTransform: "uppercase",
             letterSpacing: "1px",
@@ -318,7 +318,7 @@ export default function BookSearch({
                       style={{
                         margin: "6px 0 0",
                         fontSize: "10px",
-                        color: "#777",
+                        color: "#aaa",
                         fontStyle: "italic",
                         lineHeight: 1.4,
                         display: "-webkit-box",
@@ -411,7 +411,7 @@ export default function BookSearch({
             top: "50%",
             transform: "translateY(-50%)",
             fontSize: "14px",
-            color: "#555",
+            color: "#999",
             pointerEvents: "none",
           }}
         >
@@ -431,7 +431,7 @@ export default function BookSearch({
         <p
           style={{
             fontSize: "10px",
-            color: "#666",
+            color: "#999",
             margin: "0 0 8px",
             textTransform: "uppercase",
             letterSpacing: "1px",
@@ -543,7 +543,7 @@ export default function BookSearch({
                       gap: "8px",
                       marginTop: "4px",
                       fontSize: "10px",
-                      color: "#666",
+                      color: "#999",
                     }}
                   >
                     {book.first_publish_year && (
@@ -628,7 +628,7 @@ export default function BookSearch({
         <p
           style={{
             textAlign: "center",
-            color: "#555",
+            color: "#999",
             fontSize: "12px",
             padding: "16px 0",
           }}
