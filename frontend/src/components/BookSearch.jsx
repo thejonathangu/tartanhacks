@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { fetchLibrarianSearch } from "../api/archivistClient";
 
 /**
@@ -45,6 +45,15 @@ export default function BookSearch({ onBookSelect, accentColor = "#4ecdc4" }) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => doSearch(val), 400);
   };
+
+  // Cleanup debounce timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
