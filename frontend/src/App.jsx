@@ -139,7 +139,6 @@ export default function App() {
   /* ── Book selection from LibrarianAgent search ──────────────── */
   const handleBookSelect = useCallback((book) => {
     setSelectedBook(book);
-    console.log("Selected book for processing:", book);
   }, []);
 
   /* ── Marker click → Conductor orchestration ─────────────────── */
