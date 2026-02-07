@@ -111,22 +111,55 @@ export default function MapComponent({ onMarkerClick, popupContent }) {
 
     const { geometry, properties, deepContext } = popupContent;
     const coords = geometry.coordinates;
+    const [lng, lat] = coords;
+
+    // Era-based accent colors
+    const accentColor = properties.era === "1940s" ? "#e6b800"
+      : properties.era === "1920s" ? "#ff6b6b" : "#4ecdc4";
+
+    // Google Street View static image (no API key required for low usage)
+    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=400x200&location=${lat},${lng}&fov=90&heading=235&pitch=10&key=`;
 
     const html = `
-      <div style="max-width:280px;font-family:system-ui,sans-serif;">
-        <h3 style="margin:0 0 4px;">${properties.title}</h3>
-        <p style="color:#aaa;margin:0 0 8px;font-size:12px;">${properties.book} · ${properties.year}</p>
-        <blockquote style="border-left:3px solid #e6b800;padding-left:8px;margin:0 0 8px;font-style:italic;">
+      <div style="max-width:320px;font-family:system-ui,sans-serif;color:#1a1a2e;">
+        <div style="position:relative;margin:-10px -10px 8px -10px;overflow:hidden;border-radius:8px 8px 0 0;">
+          <img src="${streetViewUrl}" alt="Street View"
+            style="width:100%;height:140px;object-fit:cover;display:block;"
+            onerror="this.style.display='none'" />
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:6px 10px;
+            background:linear-gradient(transparent,rgba(0,0,0,0.7));color:#fff;font-size:11px;">
+            📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}
+          </div>
+        </div>
+        <h3 style="margin:0 0 4px;color:#1a1a2e;font-size:15px;">${properties.title}</h3>
+        <p style="color:#666;margin:0 0 8px;font-size:12px;">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+            background:${accentColor};margin-right:4px;vertical-align:middle;"></span>
+          ${properties.book} · ${properties.year}
+        </p>
+        <blockquote style="border-left:3px solid ${accentColor};padding-left:8px;margin:0 0 10px;
+          font-style:italic;font-size:13px;color:#333;line-height:1.5;">
           "${properties.quote}"
         </blockquote>
         ${deepContext ? `
-          <p style="font-size:13px;"><strong>Historical Context:</strong> ${deepContext.historical_context}</p>
-          ${deepContext.dialect_note ? `<p style="font-size:12px;color:#4ecdc4;">🗣 ${deepContext.dialect_note}</p>` : ""}
+          <div style="background:#f5f5f5;border-radius:6px;padding:8px 10px;margin:0 0 6px;">
+            <p style="font-size:12px;margin:0 0 4px;"><strong>🏛 Historical Context:</strong></p>
+            <p style="font-size:12px;margin:0;color:#444;line-height:1.4;">${deepContext.historical_context}</p>
+          </div>
+          ${deepContext.ai_insight ? `
+            <div style="background:#1a1a2e;border-radius:6px;padding:8px 10px;margin:0 0 6px;">
+              <p style="font-size:11px;margin:0 0 4px;color:#e6b800;">✨ AI Deep Dive (via Dedalus)</p>
+              <p style="font-size:12px;margin:0;color:#ddd;line-height:1.4;">${deepContext.ai_insight}</p>
+            </div>
+          ` : ""}
+          ${deepContext.dialect_note ? `
+            <p style="font-size:12px;color:${accentColor};margin:0;">🗣 ${deepContext.dialect_note}</p>
+          ` : ""}
         ` : `<p style="font-size:12px;color:#ff6b6b;">⚠ Could not reach ArchivistAgent</p>`}
       </div>
     `;
 
-    popupRef.current = new mapboxgl.Popup({ closeOnClick: true })
+    popupRef.current = new mapboxgl.Popup({ closeOnClick: true, maxWidth: "340px" })
       .setLngLat(coords)
       .setHTML(html)
       .addTo(mapRef.current);

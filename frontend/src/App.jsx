@@ -11,13 +11,18 @@ export default function App() {
    * before we display anything to the user.
    */
   const handleMarkerClick = async (feature) => {
-    const { id } = feature.properties;
+    // Extract plain data from the Mapbox feature (Mapbox feature objects
+    // don't spread cleanly, so we pull geometry & properties explicitly).
+    const geometry = feature.geometry ? { type: feature.geometry.type, coordinates: feature.geometry.coordinates.slice() } : null;
+    const properties = { ...feature.properties };
+    const { id } = properties;
+
     try {
       const deepContext = await fetchArchivistContext(id);
-      setPopupContent({ ...feature, deepContext });
+      setPopupContent({ geometry, properties, deepContext });
     } catch (err) {
       console.error("ArchivistAgent call failed:", err);
-      setPopupContent({ ...feature, deepContext: null });
+      setPopupContent({ geometry, properties, deepContext: null });
     }
   };
 
