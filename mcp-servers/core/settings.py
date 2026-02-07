@@ -32,8 +32,10 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
 ]
 
-# Wide-open CORS for hackathon dev — lock down in production
+# Wide-open CORS for hackathon dev
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
+CORS_ALLOW_HEADERS = ["accept", "content-type", "origin", "authorization", "x-requested-with"]
 
 ROOT_URLCONF = "core.urls"
 
