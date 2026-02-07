@@ -41,6 +41,7 @@ export default function MapComponent({
   yearRange,
   stylistOverrides,
   uploadedBookLocations,
+  heatmapOn,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -333,6 +334,166 @@ export default function MapComponent({
         );
     }
   }, [stylistOverrides]);
+
+  // ── Heatmap layer toggle ──
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleLoadedRef.current || !map.isStyleLoaded()) return;
+
+    if (heatmapOn) {
+      // Combine curated + uploaded features for heatmap
+      const uploadedFeats = uploadedBookLocations?.features || [];
+      const combinedGeoJSON = {
+        type: "FeatureCollection",
+        features: [...literaryGeoJSON.features, ...uploadedFeats],
+      };
+      if (!map.getSource("heatmap-source")) {
+        map.addSource("heatmap-source", {
+          type: "geojson",
+          data: combinedGeoJSON,
+        });
+      } else {
+        map.getSource("heatmap-source").setData(combinedGeoJSON);
+      }
+      if (!map.getLayer("literary-heatmap")) {
+        map.addLayer(
+          {
+            id: "literary-heatmap",
+            type: "heatmap",
+            source: "heatmap-source",
+            paint: {
+              "heatmap-weight": 1,
+              "heatmap-intensity": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                0,
+                1,
+                9,
+                3,
+              ],
+              "heatmap-radius": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                0,
+                30,
+                9,
+                60,
+              ],
+              "heatmap-color": [
+                "interpolate",
+                ["linear"],
+                ["heatmap-density"],
+                0,
+                "rgba(0,0,0,0)",
+                0.2,
+                "#2c1654",
+                0.4,
+                "#4ecdc4",
+                0.6,
+                "#e6b800",
+                0.8,
+                "#ff6b6b",
+                1,
+                "#ffffff",
+              ],
+              "heatmap-opacity": 0.7,
+            },
+          },
+          "literary-glow",
+        ); // insert below marker layers
+      }
+    } else {
+      if (map.getLayer("literary-heatmap")) map.removeLayer("literary-heatmap");
+      if (map.getSource("heatmap-source")) map.removeSource("heatmap-source");
+    }
+  }, [heatmapOn, uploadedBookLocations]);
+
+  // ── Cross-book connection lines ──
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleLoadedRef.current || !map.isStyleLoaded()) return;
+
+    // Combine all features
+    const uploadedFeats = uploadedBookLocations?.features || [];
+    const allFeats = [...literaryGeoJSON.features, ...uploadedFeats];
+
+    // Find pairs of features from different books within ~0.5° (roughly same city)
+    const THRESHOLD = 0.5;
+    const connections = [];
+    for (let i = 0; i < allFeats.length; i++) {
+      for (let j = i + 1; j < allFeats.length; j++) {
+        const a = allFeats[i],
+          b = allFeats[j];
+        const bookA = a.properties?.book,
+          bookB = b.properties?.book;
+        if (!bookA || !bookB || bookA === bookB) continue;
+        const [lngA, latA] = a.geometry?.coordinates || [];
+        const [lngB, latB] = b.geometry?.coordinates || [];
+        if (lngA == null || lngB == null) continue;
+        const dist = Math.sqrt((lngA - lngB) ** 2 + (latA - latB) ** 2);
+        if (dist < THRESHOLD && dist > 0.001) {
+          connections.push({
+            type: "Feature",
+            properties: { bookA, bookB, label: `${bookA} ↔ ${bookB}` },
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [lngA, latA],
+                [lngB, latB],
+              ],
+            },
+          });
+        }
+      }
+    }
+
+    const geojson = { type: "FeatureCollection", features: connections };
+
+    if (connections.length > 0) {
+      if (!map.getSource("cross-book-lines")) {
+        map.addSource("cross-book-lines", { type: "geojson", data: geojson });
+        map.addLayer({
+          id: "cross-book-connections",
+          type: "line",
+          source: "cross-book-lines",
+          paint: {
+            "line-color": "#b388ff",
+            "line-width": 2,
+            "line-dasharray": [4, 4],
+            "line-opacity": 0.6,
+          },
+        });
+        // Label at midpoint
+        map.addLayer({
+          id: "cross-book-labels",
+          type: "symbol",
+          source: "cross-book-lines",
+          layout: {
+            "symbol-placement": "line-center",
+            "text-field": "📚 Literary Intersection",
+            "text-size": 10,
+            "text-offset": [0, -1],
+          },
+          paint: {
+            "text-color": "#b388ff",
+            "text-halo-color": "#000",
+            "text-halo-width": 1,
+          },
+        });
+      } else {
+        map.getSource("cross-book-lines").setData(geojson);
+      }
+    } else {
+      if (map.getLayer("cross-book-labels"))
+        map.removeLayer("cross-book-labels");
+      if (map.getLayer("cross-book-connections"))
+        map.removeLayer("cross-book-connections");
+      if (map.getSource("cross-book-lines"))
+        map.removeSource("cross-book-lines");
+    }
+  }, [uploadedBookLocations]);
 
   // ── Uploaded book locations from PDF ──
   useEffect(() => {
