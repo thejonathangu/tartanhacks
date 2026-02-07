@@ -115,7 +115,7 @@ export default function BookSearch({ onBookSelect, accentColor = "#4ecdc4" }) {
             letterSpacing: "1px",
           }}
         >
-          📚 {results.num_found.toLocaleString()} results for "{results.query}"
+          📚 {(results.num_found ?? 0).toLocaleString()} results for "{results.query}"
         </p>
       )}
 
