@@ -38,6 +38,7 @@ export default function MapComponent({
   onMarkerClick,
   popupContent,
   filterEra,
+  yearRange,
   stylistOverrides,
   uploadedBookLocations,
 }) {
@@ -46,6 +47,7 @@ export default function MapComponent({
   const popupRef = useRef(null);
   const onMarkerClickRef = useRef(onMarkerClick);
   const filterEraRef = useRef(filterEra);
+  const yearRangeRef = useRef(yearRange);
   const styleLoadedRef = useRef(false);
   const [activeStyle, setActiveStyle] = useState("Satellite");
 
@@ -55,6 +57,9 @@ export default function MapComponent({
   useEffect(() => {
     filterEraRef.current = filterEra;
   }, [filterEra]);
+  useEffect(() => {
+    yearRangeRef.current = yearRange;
+  }, [yearRange]);
 
   if (MAPBOX_TOKEN) {
     mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -190,14 +195,29 @@ export default function MapComponent({
     map.on("style.load", () => {
       styleLoadedRef.current = true;
       addAllLayers(map);
+      // Apply year range filter if active
+      const yr = yearRangeRef.current;
       const era = filterEraRef.current;
-      const filter = era ? ["==", ["get", "era"], era] : null;
+      let filter = null;
+      if (yr) {
+        filter = [
+          "all",
+          [">=", ["get", "year"], yr[0]],
+          ["<=", ["get", "year"], yr[1]],
+        ];
+      } else if (era) {
+        filter = ["==", ["get", "era"], era];
+      }
       [
         "literary-markers",
         "literary-glow",
         "literary-labels",
         "route-lines",
       ].forEach((id) => {
+        if (map.getLayer(id)) map.setFilter(id, filter);
+      });
+      // Also filter uploaded layers
+      ["uploaded-markers", "uploaded-labels"].forEach((id) => {
         if (map.getLayer(id)) map.setFilter(id, filter);
       });
     });
@@ -213,12 +233,23 @@ export default function MapComponent({
     mapRef.current.setStyle(MAP_STYLES[activeStyle]);
   }, [activeStyle]);
 
-  // ── Era filtering ──
+  // ── Year range / Era filtering ──
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleLoadedRef.current || !map.isStyleLoaded()) return;
 
-    const filter = filterEra ? ["==", ["get", "era"], filterEra] : null;
+    let filter = null;
+    if (yearRange) {
+      filter = [
+        "all",
+        [">=", ["get", "year"], yearRange[0]],
+        ["<=", ["get", "year"], yearRange[1]],
+      ];
+    } else if (filterEra) {
+      filter = ["==", ["get", "era"], filterEra];
+    }
+
+    // Apply to curated layers
     [
       "literary-markers",
       "literary-glow",
@@ -228,18 +259,38 @@ export default function MapComponent({
       if (map.getLayer(id)) map.setFilter(id, filter);
     });
 
-    // Fly to era bounding box
-    if (filterEra) {
-      const eraFeatures = literaryGeoJSON.features.filter(
-        (f) => f.properties.era === filterEra,
-      );
-      if (eraFeatures.length > 0) {
+    // Apply to uploaded layers too
+    ["uploaded-markers", "uploaded-labels"].forEach((id) => {
+      if (map.getLayer(id)) map.setFilter(id, filter);
+    });
+
+    // Fly to filtered features bounding box
+    if (yearRange || filterEra) {
+      const uploadedFeatures =
+        uploadedBookLocations && uploadedBookLocations.features
+          ? uploadedBookLocations.features
+          : [];
+      const allFeatures = [...literaryGeoJSON.features, ...uploadedFeatures];
+      const matchedFeatures = allFeatures.filter((f) => {
+        if (yearRange) {
+          const y = f.properties?.year;
+          return y != null && y >= yearRange[0] && y <= yearRange[1];
+        }
+        return f.properties?.era === filterEra;
+      });
+      if (matchedFeatures.length > 0) {
         const bounds = new mapboxgl.LngLatBounds();
-        eraFeatures.forEach((f) => bounds.extend(f.geometry.coordinates));
-        map.fitBounds(bounds, { padding: 80, maxZoom: 12, duration: 1500 });
+        matchedFeatures.forEach((f) => {
+          const coords = f.geometry?.coordinates;
+          if (coords && coords[0] != null && coords[1] != null)
+            bounds.extend(coords);
+        });
+        if (!bounds.isEmpty()) {
+          map.fitBounds(bounds, { padding: 80, maxZoom: 12, duration: 1500 });
+        }
       }
     }
-  }, [filterEra]);
+  }, [yearRange, filterEra, uploadedBookLocations]);
 
   // ── Apply StylistAgent overrides ──
   useEffect(() => {

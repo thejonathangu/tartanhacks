@@ -23,7 +23,14 @@ For each location, provide:
 3. A relevant quote or reference from the book mentioning or describing this place
 4. Brief historical context connecting the book to this location
 5. The mood/atmosphere of this location as described in the book
-6. The year/era the book references for this location
+6. The year/era — use the time period when the story's ACTION takes place at that location:
+   - Use the year the CHARACTERS actually visit or experience that place in the narrative
+   - "The Da Vinci Code" is set in ~2003 — characters visit the Louvre, Rosslyn Chapel etc. in present day, so use ~2003 even though the plot involves Da Vinci
+   - "All the Light We Cannot See" — use ~1944 because the characters experience WWII-era Saint-Malo
+   - "The Pillars of the Earth" — use ~1170 because the story takes place in medieval England
+   - The key question is: WHEN does the protagonist walk through this place?
+   - If a book has dual timelines (e.g., historical flashbacks + present day), use the timeline that has the most narrative weight at that location
+   - Different locations CAN have different years if the story's timeline shifts
 
 Return your response as a JSON array with this exact structure:
 [
@@ -31,7 +38,7 @@ Return your response as a JSON array with this exact structure:
     "id": "unique-slug-id",
     "title": "Place Name — Short Description",
     "book": "Book Title",
-    "era": "decade like 1920s, 1940s, 1960s, 1980s, 2000s etc",
+    "era": "decade like 1170s, 1920s, 1940s, 2000s etc",
     "year": 1925,
     "coordinates": [longitude, latitude],
     "quote": "A memorable quote or reference from the book about this place...",
@@ -45,6 +52,7 @@ Rules:
 - Extract 3-10 locations maximum
 - Prefer the most iconic/memorable locations from the book
 - Use your knowledge of the book's content to provide accurate quotes or close paraphrases
+- The "year" field should reflect WHEN the story's characters experience that location, not the publication date and not some historical figure merely referenced in the plot
 - If you don't recognize the book, still try to identify locations if possible from the title
 - Return ONLY the JSON array, no other text"""
 

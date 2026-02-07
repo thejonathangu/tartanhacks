@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import MapComponent from "./components/MapComponent";
 import BookSearch from "./components/BookSearch";
 import BookUpload from "./components/BookUpload";
 import { fetchConductorOrchestrate } from "./api/archivistClient";
+import { literaryGeoJSON } from "./data/literaryPoints";
 
 /* ── Era metadata ──────────────────────────────────────────────── */
 const ERA_META = {
@@ -130,6 +131,7 @@ function DelegationTimeline({ timeline, totalMs }) {
 export default function App() {
   const [popupContent, setPopupContent] = useState(null);
   const [selectedEra, setSelectedEra] = useState(null);
+  const [yearRange, setYearRange] = useState(null); // [min, max] or null = show all
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -137,6 +139,48 @@ export default function App() {
   const [conductorResult, setConductorResult] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
   const [uploadedBookLocations, setUploadedBookLocations] = useState(null);
+
+  // Debounce ref for slider MCP calls
+  const sliderDebounceRef = useRef(null);
+
+  /* ── Compute global year range from curated + uploaded data ── */
+  const globalYearRange = useMemo(() => {
+    const years = [];
+    for (const f of literaryGeoJSON.features) {
+      const y = f.properties?.year;
+      if (typeof y === "number" && isFinite(y)) years.push(y);
+    }
+    if (uploadedBookLocations?.features) {
+      for (const f of uploadedBookLocations.features) {
+        const y = f.properties?.year;
+        if (typeof y === "number" && isFinite(y)) years.push(y);
+      }
+    }
+    if (years.length === 0) return [1920, 2020];
+    const min = Math.min(...years);
+    const max = Math.max(...years);
+    // Pad by 5 years on each side so slider isn't at the very edge
+    return [Math.floor((min - 5) / 10) * 10, Math.ceil((max + 5) / 10) * 10];
+  }, [uploadedBookLocations]);
+
+  // Reset yearRange when uploaded locations change so slider is fresh
+  React.useEffect(() => {
+    if (yearRange) {
+      // Clamp existing range to new global bounds
+      const clamped = [
+        Math.max(yearRange[0], globalYearRange[0]),
+        Math.min(yearRange[1], globalYearRange[1]),
+      ];
+      if (clamped[0] >= clamped[1]) {
+        setYearRange(null); // range is invalid, reset
+      } else if (clamped[0] !== yearRange[0] || clamped[1] !== yearRange[1]) {
+        setYearRange(clamped);
+      }
+    }
+  }, [globalYearRange]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Helper: year → era string (e.g. 1925 → "1920s") ───────── */
+  const yearToEra = (year) => `${Math.floor(year / 10) * 10}s`;
   /* ── Book selection from LibrarianAgent search ──────────────── */
   const handleBookSelect = useCallback((book) => {
     setSelectedBook(book);
@@ -191,30 +235,38 @@ export default function App() {
     }
   }, []);
 
-  /* ── Era filter click → Conductor for Linguist + Stylist ────── */
-  const handleEraClick = useCallback(
-    async (era) => {
-      const nextEra = selectedEra === era ? null : era;
-      setSelectedEra(nextEra);
-      if (!nextEra) {
-        setConductorResult(null);
-        return;
-      }
+  /* ── Era filter — year range slider ──────────────────────────── */
+  const handleYearRangeChange = useCallback((newRange) => {
+    setYearRange(newRange);
+    // Derive an era string from the midpoint for MCP calls
+    if (newRange) {
+      const mid = Math.round((newRange[0] + newRange[1]) / 2);
+      const era = yearToEra(mid);
+      setSelectedEra(era);
 
-      setLoading(true);
-      try {
-        const result = await fetchConductorOrchestrate({ era: nextEra });
-        setConductorResult(result);
-      } catch (err) {
-        console.error("Era orchestration failed:", err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [selectedEra],
-  );
+      // Debounced MCP call — only fire after user stops sliding for 600ms
+      if (sliderDebounceRef.current) clearTimeout(sliderDebounceRef.current);
+      sliderDebounceRef.current = setTimeout(async () => {
+        setLoading(true);
+        try {
+          const result = await fetchConductorOrchestrate({ era });
+          setConductorResult(result);
+        } catch (err) {
+          console.error("Era orchestration failed:", err);
+        } finally {
+          setLoading(false);
+        }
+      }, 600);
+    } else {
+      setSelectedEra(null);
+      setConductorResult(null);
+      if (sliderDebounceRef.current) clearTimeout(sliderDebounceRef.current);
+    }
+  }, []);
 
-  const eraColor = selectedEra ? ERA_META[selectedEra]?.color : "#4ecdc4";
+  const eraColor = selectedEra
+    ? ERA_META[selectedEra]?.color || "#b388ff"
+    : "#4ecdc4";
   const archivist = conductorResult?.archivist;
   const linguist = conductorResult?.linguist;
   const stylist = conductorResult?.stylist;
@@ -275,53 +327,215 @@ export default function App() {
           </div>
         </div>
 
-        {/* Era Filter */}
+        {/* Era Filter — Year Range Slider */}
         <div
           style={{ padding: "14px 20px", borderBottom: "1px solid #1e2235" }}
         >
-          <p
+          <div
             style={{
-              fontSize: "10px",
-              color: "#555",
-              margin: "0 0 8px",
-              textTransform: "uppercase",
-              letterSpacing: "1.5px",
-              fontWeight: 600,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "8px",
             }}
           >
-            Filter by Era
-          </p>
-          <div style={{ display: "flex", gap: "6px" }}>
-            {Object.entries(ERA_META).map(([era, meta]) => (
+            <p
+              style={{
+                fontSize: "10px",
+                color: "#555",
+                margin: 0,
+                textTransform: "uppercase",
+                letterSpacing: "1.5px",
+                fontWeight: 600,
+              }}
+            >
+              🕰️ Time Window
+            </p>
+            {yearRange && (
               <button
-                key={era}
-                onClick={() => handleEraClick(era)}
+                onClick={() => handleYearRangeChange(null)}
                 style={{
-                  flex: 1,
-                  background: selectedEra === era ? meta.color : "#1a1d2e",
-                  color: selectedEra === era ? "#000" : "#999",
-                  border: `1px solid ${selectedEra === era ? meta.color : "#252840"}`,
-                  borderRadius: "8px",
-                  padding: "10px 4px",
+                  background: "none",
+                  border: "1px solid #333",
+                  borderRadius: "4px",
+                  color: "#888",
+                  fontSize: "9px",
+                  padding: "2px 6px",
                   cursor: "pointer",
-                  fontSize: "11px",
-                  fontWeight: selectedEra === era ? 700 : 400,
-                  transition: "all 0.2s ease",
-                  textAlign: "center",
+                  fontFamily: "system-ui, sans-serif",
                 }}
               >
-                <span
+                Reset
+              </button>
+            )}
+          </div>
+
+          {/* Range display */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "6px",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "20px",
+                fontWeight: 700,
+                fontFamily: "monospace",
+                color: yearRange ? eraColor : "#555",
+              }}
+            >
+              {yearRange ? yearRange[0] : globalYearRange[0]}
+            </span>
+            <span style={{ fontSize: "10px", color: "#555", padding: "0 8px" }}>
+              {yearRange
+                ? `${selectedEra || ""} · ${yearRange[1] - yearRange[0]} yr span`
+                : "All eras"}
+            </span>
+            <span
+              style={{
+                fontSize: "20px",
+                fontWeight: 700,
+                fontFamily: "monospace",
+                color: yearRange ? eraColor : "#555",
+              }}
+            >
+              {yearRange ? yearRange[1] : globalYearRange[1]}
+            </span>
+          </div>
+
+          {/* Dual range slider */}
+          <div
+            style={{ position: "relative", height: "36px", padding: "0 2px" }}
+          >
+            {/* Track background */}
+            <div
+              style={{
+                position: "absolute",
+                top: "16px",
+                left: 0,
+                right: 0,
+                height: "4px",
+                background: "#1a1d2e",
+                borderRadius: "2px",
+              }}
+            />
+            {/* Active track */}
+            {yearRange &&
+              (() => {
+                const span = globalYearRange[1] - globalYearRange[0] || 1;
+                const leftPct =
+                  ((yearRange[0] - globalYearRange[0]) / span) * 100;
+                const rightPct =
+                  ((yearRange[1] - globalYearRange[0]) / span) * 100;
+                return (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "16px",
+                      height: "4px",
+                      left: `${leftPct}%`,
+                      width: `${rightPct - leftPct}%`,
+                      background: `linear-gradient(90deg, ${eraColor}, ${eraColor}88)`,
+                      borderRadius: "2px",
+                    }}
+                  />
+                );
+              })()}
+            {/* Min slider */}
+            <input
+              type="range"
+              min={globalYearRange[0]}
+              max={globalYearRange[1]}
+              step={1}
+              value={yearRange ? yearRange[0] : globalYearRange[0]}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                const curMax = yearRange ? yearRange[1] : globalYearRange[1];
+                handleYearRangeChange([Math.min(v, curMax - 1), curMax]);
+              }}
+              style={{
+                position: "absolute",
+                top: "6px",
+                left: 0,
+                width: "100%",
+                WebkitAppearance: "none",
+                appearance: "none",
+                background: "transparent",
+                pointerEvents: "none",
+                height: "24px",
+                margin: 0,
+                zIndex: 3,
+              }}
+              className="era-slider"
+            />
+            {/* Max slider */}
+            <input
+              type="range"
+              min={globalYearRange[0]}
+              max={globalYearRange[1]}
+              step={1}
+              value={yearRange ? yearRange[1] : globalYearRange[1]}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                const curMin = yearRange ? yearRange[0] : globalYearRange[0];
+                handleYearRangeChange([curMin, Math.max(v, curMin + 1)]);
+              }}
+              style={{
+                position: "absolute",
+                top: "6px",
+                left: 0,
+                width: "100%",
+                WebkitAppearance: "none",
+                appearance: "none",
+                background: "transparent",
+                pointerEvents: "none",
+                height: "24px",
+                margin: 0,
+                zIndex: 4,
+              }}
+              className="era-slider"
+            />
+          </div>
+
+          {/* Era quick-select chips */}
+          <div
+            style={{
+              display: "flex",
+              gap: "4px",
+              marginTop: "6px",
+              flexWrap: "wrap",
+            }}
+          >
+            {Object.entries(ERA_META).map(([era, meta]) => {
+              const decade = parseInt(era);
+              const isActive =
+                yearRange &&
+                yearRange[0] <= decade &&
+                yearRange[1] >= decade + 9;
+              return (
+                <button
+                  key={era}
+                  onClick={() => handleYearRangeChange([decade, decade + 9])}
                   style={{
-                    display: "block",
-                    fontSize: "18px",
-                    marginBottom: "2px",
+                    background: isActive ? `${meta.color}22` : "#141728",
+                    color: isActive ? meta.color : "#666",
+                    border: `1px solid ${isActive ? meta.color + "66" : "#1e2235"}`,
+                    borderRadius: "6px",
+                    padding: "4px 8px",
+                    cursor: "pointer",
+                    fontSize: "10px",
+                    fontWeight: isActive ? 700 : 400,
+                    transition: "all 0.2s ease",
+                    fontFamily: "system-ui, sans-serif",
                   }}
                 >
-                  {meta.icon}
-                </span>
-                {era}
-              </button>
-            ))}
+                  {meta.icon} {era}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -931,6 +1145,7 @@ export default function App() {
           onMarkerClick={handleMarkerClick}
           popupContent={popupContent}
           filterEra={selectedEra}
+          yearRange={yearRange}
           stylistOverrides={stylist}
           uploadedBookLocations={uploadedBookLocations}
         />
@@ -951,6 +1166,29 @@ export default function App() {
         ::-webkit-scrollbar-track { background: #0d0f1a; }
         ::-webkit-scrollbar-thumb { background: #2a2d3e; border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: #4ecdc4; }
+        /* Range slider thumb styling */
+        .era-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #4ecdc4;
+          border: 2px solid #0d0f1a;
+          cursor: pointer;
+          pointer-events: auto;
+          box-shadow: 0 0 6px rgba(78,205,196,0.5);
+        }
+        .era-slider::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #4ecdc4;
+          border: 2px solid #0d0f1a;
+          cursor: pointer;
+          pointer-events: auto;
+          box-shadow: 0 0 6px rgba(78,205,196,0.5);
+        }
       `}</style>
     </div>
   );
