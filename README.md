@@ -1,18 +1,17 @@
-# 🗺️ Odyssey
+# Odyssey
+Tartan Hacks 2026 Hackathon Project (liberal arts & creative track)
 
-**An AI-powered interactive map that extracts and visualizes geographic locations from books using the Model Context Protocol.**
+An AI-powered interactive map that extracts and visualizes geographic locations from books using Model Context Protocol. Odyssey identifies significant locations mentioned in literary texts, ranks them by narrative importance, and displays them on an interactive map for deep literary analysis.
 
-Upload any PDF book or search by title, and watch as AI extracts significant locations mentioned in the text, ranking them by narrative importance and displaying them on an interactive map. Perfect for literary analysis, travel planning based on books, or exploring the geography of your favorite stories.
-
-> Built for TartanHacks 2026 · Powered by [Dedalus Labs](https://dedaluslabs.ai) AI & [Mapbox](https://mapbox.com)
+> Powered by [Dedalus Labs](https://dedaluslabs.ai) AI and [Mapbox](https://mapbox.com)
 >
 > **🌐 Live Demo:** [https://odyssey-wp6e.onrender.com/](https://odyssey-wp6e.onrender.com/)
 
 ---
 
-## ✨ Features
+## Features
 
-### 📚 Two Ways to Discover Literary Locations
+### Two Ways to Discover Literary Locations
 
 1. **📄 PDF Upload**
 
@@ -25,14 +24,14 @@ Upload any PDF book or search by title, and watch as AI extracts significant loc
    - AI recalls well-known locations from its knowledge of world literature
    - No PDF needed—just search and map
 
-### 🎯 Intelligent Location Ranking
+### Intelligent Location Ranking
 
 - **Automatic Relevance Scoring**: AI assigns each location a 1-10 relevance score based on narrative importance
 - **Smart Ranking**: Locations are sorted and numbered (1 = most important, N = least important)
 - **Visual Markers**: Each location displays its rank number directly on the map
 - **Ordered Lists**: Sidebar shows locations in importance order with numbered badges
 
-### 🗺️ Interactive Map Features
+### Interactive Map Features
 
 - **Multiple Map Styles**: Switch between Satellite, Dark, Streets, and Light themes
 - **Era Filtering**: Filter locations by decade (1920s, 1940s, 1960s, etc.)
@@ -40,9 +39,9 @@ Upload any PDF book or search by title, and watch as AI extracts significant loc
 - **Click for Details**: Click any marker to see quotes, historical context, and more
 - **Multi-Book Support**: Upload or search multiple books to see location overlaps
 
-### 🤖 MCP Architecture with Orchestration
+### MCP Architecture with Orchestration
 
-Built on the **Model Context Protocol**, the backend uses modular specialist agents:
+Built on **Model Context Protocol**, the backend uses modular specialist agents:
 
 - **🏛 ArchivistAgent**: Searches book databases and enriches with historical context
 - **🗣 LinguistAgent**: Analyzes era-specific dialect and cultural references
@@ -51,7 +50,7 @@ Built on the **Model Context Protocol**, the backend uses modular specialist age
 
 ---
 
-## 🎬 Quick Demo
+## Quick Demo
 
 **What you can do in 30 seconds:**
 
@@ -65,11 +64,14 @@ Built on the **Model Context Protocol**, the backend uses modular specialist age
 
 ---
 
-## 🏗️ MCP Architecture & Workflows
+## MCP Architecture & Workflows
 
 ### Architecture Overview
 
-Odyssey uses the **Model Context Protocol** to coordinate multiple AI agents working together. Instead of a single monolithic prompt, specialized agents handle specific tasks and coordinate through a central conductor.
+<img width="453" height="357" alt="image" src="https://github.com/user-attachments/assets/23a31c60-bbe4-4c9c-acc1-3287abbf5da5" />
+
+
+Odyssey uses **Model Context Protocol** to coordinate multiple AI agents working together. Instead of a single monolithic prompt, specialized agents handle specific tasks and coordinate through a central conductor.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -80,10 +82,10 @@ Odyssey uses the **Model Context Protocol** to coordinate multiple AI agents wor
 │  └──────┬───────┘  └──────┬───────┘  └────────┬───────────────┘ │
 │         │                 │                   │                 │
 │         └─────────┬───────┴──────────────┬────┘                 │
-│                   ▼                      ▼                       │
+│                   ▼                      ▼                      │
 │         POST /upload-pdf         POST /extract-from-title       │
 │         POST /orchestrate        POST /chat-about-place         │
-└───────────────────┬──────────────────────┬─────────────────────┘
+└───────────────────┬──────────────────────┬──────────────────────┘
                     │                      │
                     ▼                      ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -104,15 +106,15 @@ Odyssey uses the **Model Context Protocol** to coordinate multiple AI agents wor
 │  │  • Delegates to specialist agents in parallel              │ │
 │  │  • Synthesizes responses into unified narrative            │ │
 │  │                                                            │ │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │ │
-│  │  │ 🏛 Archivist │  │ 🗣 Linguist  │  │ 🎨 Stylist   │    │ │
-│  │  │ Historical   │  │ Dialect      │  │ Map Theme    │    │ │
-│  │  │ Context      │  │ Analysis     │  │ Generation   │    │ │
-│  │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │ │
-│  │         └────────────┬─────────────────────┬─┘            │ │
-│  └──────────────────────┼─────────────────────┼──────────────┘ │
-│                         ▼                     ▼                │
-│                  Dedalus Labs API (GPT-4o)                     │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │ │
+│  │  │ 🏛 Archivist │  │ 🗣 Linguist  │  │ 🎨 Stylist   │      │ │
+│  │  │ Historical   │  │ Dialect      │  │ Map Theme    │      │ │
+│  │  │ Context      │  │ Analysis     │  │ Generation   │      │ │
+│  │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │ │
+│  │         └────────────┬─────────────────────┬┘              │ │
+│  └──────────────────────┼─────────────────────┼───────────────┘ │
+│                         ▼                     ▼                 │
+│                  Dedalus Labs API (GPT-4o)                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -163,20 +165,13 @@ Odyssey uses the **Model Context Protocol** to coordinate multiple AI agents wor
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Option 1: Use the Deployed App (Recommended)
 
 **🌐 Live Demo:** [https://odyssey-wp6e.onrender.com/](https://odyssey-wp6e.onrender.com/)
 
 Just click the link and start exploring! No installation required.
-
-**Try it out:**
-
-1. 📖 Search for a book like "The Great Gatsby" or "On the Road"
-2. 📄 Upload your own PDF book (text-based, not scanned images)
-3. 🗺️ Click markers to see location details and MCP orchestration
-4. 🎨 Use filters to explore by era or year range
 
 ---
 
@@ -279,7 +274,7 @@ Navigate to `http://localhost:3000` and start exploring!
 
 ---
 
-## 📚 How It Works
+## How It Works
 
 ### Location Extraction Process
 
@@ -318,7 +313,7 @@ If a book has 6 locations with relevance scores: `[9, 8, 7, 5, 4, 2]`
 
 ---
 
-## 🎯 Use Cases
+## Use Cases
 
 - **📖 Literary Analysis**: Study the geographic scope of novels and travel narratives
 - **✈️ Literary Tourism**: Plan trips based on locations from your favorite books
@@ -326,82 +321,9 @@ If a book has 6 locations with relevance scores: `[9, 8, 7, 5, 4, 2]`
 - **📝 Book Clubs**: Explore locations discussed in book club selections
 - **🗺️ Comparative Literature**: Compare geographic settings across multiple books
 - **🔍 Research**: Analyze patterns in literary geography by era or author
-
 ---
 
-## 🏆 Why This Project Stands Out
-
-### Technical Innovation
-
-1. **MCP Architecture**: Demonstrates proper agent orchestration, not just prompt chaining
-2. **Intelligent Ranking**: Context-aware sorting based on narrative importance
-3. **Dual Input Methods**: Supports both PDF upload and title-based search
-4. **Real-time Extraction**: Processes books on-demand with AI
-5. **Parallel Processing**: Multiple agents execute simultaneously for speed
-
-### User Experience
-
-1. **Intuitive Interface**: Clean, modern design with dark theme
-2. **Visual Hierarchy**: Numbered markers match sidebar ordering
-3. **Rich Context**: Every location includes quotes, history, and mood
-4. **Flexible Filtering**: Filter by era, year range, or book
-5. **Interactive Exploration**: Click, zoom, and explore dynamically
-
-### MCP Implementation
-
-1. **Observable Orchestration**: See which agents are called and their latency
-2. **Specialist Agents**: Modular design with focused responsibilities
-3. **Conductor Pattern**: Central orchestrator coordinates specialist agents
-4. **Synthesis**: Multiple AI perspectives combined into unified narrative
-5. **Extensible**: Easy to add new agents or capabilities
-
----
-
----
-
-## 📁 Project Structure
-
-```
-odyssey/
-├── frontend/                      # React + Vite frontend
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── MapComponent.jsx   # Main map with Mapbox GL
-│   │   │   ├── BookSearch.jsx     # Title search + location list
-│   │   │   └── BookUpload.jsx     # PDF upload interface
-│   │   ├── api/
-│   │   │   └── archivistClient.js # API client for backend
-│   │   ├── data/
-│   │   │   └── literaryPoints.js  # Pre-loaded landmark data
-│   │   ├── App.jsx                # Main app component
-│   │   └── main.jsx               # Entry point
-│   ├── vite.config.js             # Vite configuration
-│   └── package.json
-│
-├── mcp-servers/                   # Django backend (MCP Server)
-│   ├── core/
-│   │   ├── pdf_processor.py       # PDF text extraction + AI location extraction
-│   │   ├── title_extractor.py     # Title-based location extraction
-│   │   ├── conductor.py           # ConductorAgent orchestration
-│   │   ├── dedalus_client.py      # Dedalus AI API client
-│   │   ├── upload_views.py        # PDF upload endpoint
-│   │   ├── chat_views.py          # Chat endpoint
-│   │   └── urls.py                # API routes
-│   ├── archivist/                 # ArchivistAgent (historical context)
-│   ├── linguist/                  # LinguistAgent (dialect analysis)
-│   ├── stylist/                   # StylistAgent (map styling)
-│   ├── librarian/                 # LibrarianAgent (book search)
-│   ├── manage.py
-│   └── requirements.txt
-│
-├── .env                           # Environment variables (create this)
-├── README.md                      # This file
-└── *.md                           # Documentation files
-```
-
----
-
-## 🤝 Contributing
+## Contributing
 
 This project was built for **TartanHacks 2026**. Contributions, issues, and feature requests are welcome!
 
@@ -417,23 +339,6 @@ This project was built for **TartanHacks 2026**. Contributions, issues, and feat
 
 ---
 
-## 📄 License
-
-MIT License - feel free to use this project for your own literary adventures!
-
----
-
-## 🙏 Acknowledgments
-
-- **TartanHacks 2026** for the hackathon opportunity
-- **Dedalus Labs** for AI infrastructure and MCP hosting
-- **Mapbox** for beautiful, interactive maps
-- **Open Library** for book metadata
-- **PyMuPDF** for PDF processing capabilities
-
----
-
-## 📧 Contact & Demo
 
 **Built for TartanHacks 2026**
 
@@ -442,3 +347,4 @@ For questions, feedback, or demo requests, please reach out!
 ---
 
 _Map the stories. Explore the world. One book at a time._ 🗺️📚
+
